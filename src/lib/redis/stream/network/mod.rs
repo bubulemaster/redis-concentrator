@@ -5,7 +5,6 @@ use std::net::TcpStream;
 use std::io::ErrorKind;
 use std::io::Read;
 use std::io::Write;
-use std::time::SystemTime;
 use crate::lib::redis::stream::RedisStream;
 
 const BUFFER_SIZE: usize = 2048;
@@ -56,8 +55,6 @@ impl NetworkStream {
         let end = self.buf.len();
 
         for index in start..end {
-            let c = self.buf.get(index);
-
             match self.buf.get(index) {
                 Some(c) => {
                     if *c == pattern[pattern_index] {
@@ -111,8 +108,6 @@ impl RedisStream for NetworkStream {
 
     fn get_data(&mut self, size: usize) -> std::io::Result<Vec<u8>> {
         let mut size = size;
-
-        let now = SystemTime::now();
 
         if self.buf.len() < size {
             self.read()?;

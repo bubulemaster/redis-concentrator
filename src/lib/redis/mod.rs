@@ -22,6 +22,7 @@ impl<'a>  RedisConnector<'a>  {
     }
 
     /// Send PING command and wait PONG response.
+    #[allow(dead_code)]
     pub fn ping(&mut self) -> Result<(), RedisError> {
         let cmd = "PING\r\n".as_bytes();
 
@@ -39,6 +40,7 @@ impl<'a>  RedisConnector<'a>  {
 
     /// Subscribe to channel.
     /// Warning, this is blocking method.
+    #[allow(dead_code)]
     pub fn subscribe(&mut self, channel: &str) -> Result<RedisSubscription, RedisError> {
         let cmd = format!("SUBSCRIBE {}\r\n", channel);
         let cmd = cmd.as_bytes();
@@ -51,6 +53,7 @@ impl<'a>  RedisConnector<'a>  {
     }
 
     /// Get bulk string.
+    #[allow(dead_code)]
     pub fn get(&mut self, key: &str) -> Result<Option<Vec<u8>>, RedisError> {
         let key = format!("GET {}\r\n", key);
 
@@ -62,6 +65,7 @@ impl<'a>  RedisConnector<'a>  {
     }
 
     /// Get string
+    #[allow(dead_code)]
     pub fn get_string(&mut self, key: &str) -> Result<Option<String>, RedisError> {
         let data = self.get(key)?;
 

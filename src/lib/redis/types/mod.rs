@@ -15,7 +15,6 @@ pub enum RedisValue {
     Nil,
     Integer(isize),
     String(String),
-    Error(String),
     BulkString(Vec<u8>),
     Array(Vec<RedisValue>)
 }
@@ -25,8 +24,6 @@ pub enum RedisValue {
 pub enum ErrorKind {
     /// The server generated an invalid response.
     ResponseError,
-    /// Operation failed because of a type mismatch.
-    TypeError,
     /// A script execution was aborted.
     ExecAbortError,
     /// The server cannot response because it's loading a dump.
@@ -98,6 +95,7 @@ impl RedisError {
         }
     }
 
+    #[allow(dead_code)]
     pub fn kind(&self) -> ErrorKind {
         self.kind.clone()
     }
@@ -113,8 +111,7 @@ impl std::fmt::Display for RedisError {
             ErrorKind::BusyLoadingError => write!(fmt, "Redis busy loading error: {}", self.message.as_ref().unwrap()),
             ErrorKind::NoScriptError => write!(fmt, "Redis no script error: {}", self.message.as_ref().unwrap()),
             ErrorKind::OtherError => write!(fmt, "Error (not Redis error): {}", self.message.as_ref().unwrap()),
-            ErrorKind::NoDataAvailable => write!(fmt, "Error: {}", self.message.as_ref().unwrap()),
-            e => panic!(format!("Unimplemented {:?}", e))
+            ErrorKind::NoDataAvailable => write!(fmt, "Error: {}", self.message.as_ref().unwrap())
         }
     }
 }

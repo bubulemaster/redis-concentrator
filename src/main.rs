@@ -1,61 +1,40 @@
+#[macro_use]
+extern crate serde_derive;
+extern crate serde_json;
+
 use std::net::TcpStream;
 //use std::io::ErrorKind;
 
+mod config;
 mod lib;
+
+use std::env;
 
 use crate::lib::redis::stream::network::NetworkStream;
 use crate::lib::redis::RedisConnector;
-/*
-fn ping(stream: &mut NetworkStream) ->  std::io::Result<String> {
-    let cmd = "PING\r\n".as_bytes();
 
-    stream.write(cmd)?;
+const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
 
-    match stream.get_until("\r\n".as_bytes()) {
-        Ok(buf) =>
-            match std::str::from_utf8(&buf) {
-                Ok(v) => Ok(String::from(v)), // TODO check response
-                Err(e) => Err(
-                    std::io::Error::new(
-                        ErrorKind::InvalidData,
-                        format!("Invalid UTF-8 sequence: {}", e)))
-            },
-        Err(e) => Err(e)
-    }
+fn help() {
+    println!("redis-concentrator {}", VERSION.unwrap_or("unknown"));
+    println!();
+    println!("Usage: redis-concentrator config-file");
+    println!();
 }
 
-fn subscribe(stream: &mut NetworkStream) ->  std::io::Result<()> {
-    let cmd = "SUBSCRIBE +switch-master\r\n".as_bytes();
-
-    stream.write(cmd)?;
-
-    loop {
-        match stream.get_until("\r\n".as_bytes()){
-            Ok(buf) => {
-                if buf.len() > 0 {
-                    println!("Receive: {:?}", buf);
-
-                    match std::str::from_utf8(&buf) {
-                        Ok(v) => println!("{}", String::from(v)), // TODO check response
-                        Err(e) => return Err(
-                            std::io::Error::new(
-                                ErrorKind::InvalidData,
-                                format!("Invalid UTF-8 sequence: {}", e)))
-                    }
-                }
-            },
-            Err(e) => {
-                println!("******* Read closed");
-                return Err(e)
-            }
-        }
-    }
-}
-*/
 fn main() {
-    println!("Hello, world!");
+    // Get command line options
+    let args: Vec<String> = env::args().collect();
 
-    let mut tcp_stream = TcpStream::connect("127.0.0.1:26000").unwrap();
+    if args.len() != 2 {
+        help();
+
+        std::process::exit(-1);
+    }
+
+    let config_file = args[1].clone();
+
+    let tcp_stream = TcpStream::connect("127.0.0.1:26000").unwrap();
 
     let timeout = std::time::Duration::from_millis(1000);
     tcp_stream.set_read_timeout(Some(timeout));

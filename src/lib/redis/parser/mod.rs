@@ -156,7 +156,7 @@ fn read_bulk_string_from_stream(stream: &mut RedisStream) -> Result<Option<Vec<u
 fn read_array_from_stream(stream: &mut RedisStream, array_size: usize) -> Result<RedisValue, RedisError> {
     let mut result: Vec<RedisValue> = Vec::with_capacity(array_size);
 
-    for index in 0..array_size {
+    for _ in 0..array_size {
         let data_type = get_byte(stream)?;
         let data_type = get_type(data_type)?;
 
@@ -197,6 +197,7 @@ fn read_array_from_stream(stream: &mut RedisStream, array_size: usize) -> Result
 
 /// Read strict string, not bulk string.
 /// Must contain '\r\n' at end (but not include in result).
+#[allow(dead_code)]
 pub fn read_strict_string(stream: &mut RedisStream) -> Result<String, RedisError> {
     let header = check_error(stream)?;
 
@@ -208,6 +209,7 @@ pub fn read_strict_string(stream: &mut RedisStream) -> Result<String, RedisError
 }
 
 /// Read integer value.
+#[allow(dead_code)]
 pub fn read_integer(stream: &mut RedisStream) -> Result<isize, RedisError> {
     let header = check_error(stream)?;
 
@@ -221,6 +223,7 @@ pub fn read_integer(stream: &mut RedisStream) -> Result<isize, RedisError> {
 
 /// Read bulk string.
 /// Bulk string can contain non printable char.
+#[allow(dead_code)]
 pub fn read_bulk_string(stream: &mut RedisStream) -> Result<Option<Vec<u8>>, RedisError> {
     let header = check_error(stream)?;
 
@@ -233,6 +236,7 @@ pub fn read_bulk_string(stream: &mut RedisStream) -> Result<Option<Vec<u8>>, Red
 }
 
 /// Read an array.
+#[allow(dead_code)]
 pub fn read_array(stream: &mut RedisStream) -> Result<RedisValue, RedisError> {
     let array_size = read_array_size(stream)?;
 
