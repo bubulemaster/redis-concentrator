@@ -2,16 +2,17 @@
 extern crate serde_derive;
 extern crate serde_json;
 
-use std::net::TcpStream;
-//use std::io::ErrorKind;
-
 mod config;
 mod lib;
+mod sentinel;
 
 use std::env;
+use std::net::TcpStream;
 
 use crate::lib::redis::stream::network::NetworkStream;
 use crate::lib::redis::RedisConnector;
+use crate::config::get_config;
+use crate::sentinel::watch_sentinel;
 
 const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
 
@@ -33,6 +34,21 @@ fn main() {
     }
 
     let config_file = args[1].clone();
+
+    // We load config file.
+    let config = match get_config(config_file) {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("Error: give config file as argument");
+            std::process::exit(-1);
+        }
+    };
+
+    if config.sentinels.is_some() {
+        watch_sentinel();
+    } else {
+        eprintln!("Error: no sentinels found in config file");
+    }
 
     let tcp_stream = TcpStream::connect("127.0.0.1:26000").unwrap();
 

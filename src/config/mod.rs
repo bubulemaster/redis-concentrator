@@ -8,8 +8,8 @@ use std::fs::File;
 pub struct Config {
     pub bind: String,
     pub port: u16,
-    group_name: String,
-    sentinels: Option<Vec<String>>
+    pub group_name: String,
+    pub sentinels: Option<Vec<String>>
 }
 
 ///
