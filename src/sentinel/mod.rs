@@ -2,7 +2,7 @@
 //!
 use crate::config::Config;
 
-pub fn watch_sentinel(config: Config) {
+pub fn watch_sentinel(config: &Config) {
     // Get first sentinel
     // Get master
     //   +-> Connect to master

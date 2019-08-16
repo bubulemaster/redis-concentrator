@@ -17,6 +17,7 @@ use crate::lib::redis::stream::network::NetworkStream;
 use crate::lib::redis::RedisConnector;
 use crate::config::get_config;
 use crate::sentinel::watch_sentinel;
+use crate::logging::create_log;
 
 const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
 
@@ -43,15 +44,24 @@ fn main() {
     let config = match get_config(config_file) {
         Ok(c) => c,
         Err(e) => {
-            eprintln!("Error: give config file as argument");
+            eprintln!("Error: can't read config file: {}", e);
             std::process::exit(-1);
         }
     };
 
     // Set log
+    let logger = match create_log(&config) {
+        Some(l) => l,
+        None => {
+            eprintln!("Error: cannot create log!");
+            std::process::exit(-1);
+        }
+    };
+
+    info!(logger, ">>>>>> Starting");
 
     if config.sentinels.is_some() {
-        watch_sentinel(config);
+        watch_sentinel(&config);
     } else {
         eprintln!("Error: no sentinels found in config file");
     }
