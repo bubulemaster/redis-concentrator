@@ -1,9 +1,13 @@
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
+extern crate log;
+#[macro_use]
+extern crate slog;
 
 mod config;
 mod lib;
+mod logging;
 mod sentinel;
 
 use std::env;
@@ -44,8 +48,10 @@ fn main() {
         }
     };
 
+    // Set log
+
     if config.sentinels.is_some() {
-        watch_sentinel();
+        watch_sentinel(config);
     } else {
         eprintln!("Error: no sentinels found in config file");
     }

@@ -3,13 +3,49 @@ extern crate serde_yaml;
 use std::io::{Error, ErrorKind, Read};
 use std::fs::File;
 
-/// Config structure of D-SH
+/// Config structure of Redis Concentrator
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub struct Config {
     pub bind: String,
     pub port: u16,
     pub group_name: String,
-    pub sentinels: Option<Vec<String>>
+    pub sentinels: Option<Vec<String>>,
+    #[serde(default = "ConfigLog::default")]
+    pub log: ConfigLog
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
+pub struct ConfigLog {
+    #[serde(alias = "type")]
+    #[serde(default = "default_log_type")]
+    pub log_type: String,
+    #[serde(default = "default_level")]
+    pub level: String,
+    pub file: Option<String>,
+    pub syslog_id: Option<String>,
+    pub syslog_who: Option<String>
+}
+
+impl ConfigLog {
+    pub fn default() -> ConfigLog {
+        ConfigLog {
+            log_type: String::from("console"),
+            level: String::from("info"),
+            file: None,
+            syslog_id: None,
+            syslog_who: None
+        }
+    }
+}
+
+// Call by serde to have default value.
+fn default_log_type() -> String {
+    String::from("console")
+}
+
+// Call by serde to have default value.
+fn default_level() -> String {
+    String::from("info")
 }
 
 ///
