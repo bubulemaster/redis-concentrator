@@ -7,9 +7,9 @@ sentinels:
   - 127.0.0.1:26001
   - 127.0.0.1:26002
 log:
-  - type: console
-  - level: info
-# - type: file
-# - file: "dddd"
-# - type: syslog
-# - syslog_id: "eee"
+  type: console
+  level: info
+  header: true
+#  type: file
+#  file: "dddd"
+#  type: syslog

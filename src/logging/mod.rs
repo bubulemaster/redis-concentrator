@@ -19,15 +19,7 @@ pub fn create_log(config: &Config) -> Option<slog::Logger> {
                 Some(s) => Some(create_file_log(s.to_string())),
                 None => None
             },
-        "syslog" =>
-            match &config.log.syslog_id {
-                Some(id) =>
-                    match &config.log.syslog_who {
-                        Some(who) => Some(create_syslog_log(who.to_string(), id.to_string())),
-                        None => None
-                    }
-                None => None
-            },
+        "syslog" => Some(create_syslog_log()),
         e => // TODO
         None
     }
@@ -45,12 +37,6 @@ fn create_file_log(filename: String) -> slog::Logger  {
     let decorator = slog_term::PlainSyncDecorator::new(file);
     let drain = slog_term::FullFormat::new(decorator).build().fuse();
     slog::Logger::root(drain, o!())
-/*
-    // slog_stdlog uses the logger from slog_scope, so set a logger there
-    let _guard = slog_scope::set_global_logger(logger);
-
-    // register slog_stdlog as the log handler with the log crate
-    slog_stdlog::init().unwrap();*/
 }
 
 fn create_console_log() -> slog::Logger {
@@ -59,25 +45,11 @@ fn create_console_log() -> slog::Logger {
     let drain = slog_async::Async::new(drain).build().fuse();
 
     slog::Logger::root(drain, o!())
-
-    /*
-    // slog_stdlog uses the logger from slog_scope, so set a logger there
-    let _guard = slog_scope::set_global_logger(logger);
-
-    // register slog_stdlog as the log handler with the log crate
-    slog_stdlog::init().unwrap();*/
 }
 
-fn create_syslog_log(who: String, id: String) -> slog::Logger {
+fn create_syslog_log() -> slog::Logger {
     // TODO allow change facility
     let syslog = slog_syslog::unix_3164(Facility::LOG_USER).unwrap();
     let root = slog::Logger::root(syslog.fuse(), o!());
-    root.new(o!("who" => "slog-syslog test", "build-id" => id))
-
-    /*
-    // slog_stdlog uses the logger from slog_scope, so set a logger there
-    let _guard = slog_scope::set_global_logger(logger);
-
-    // register slog_stdlog as the log handler with the log crate
-    slog_stdlog::init().unwrap();*/
+    root.new(o!())
 }
