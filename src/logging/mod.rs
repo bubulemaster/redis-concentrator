@@ -9,7 +9,7 @@ use std::fs::OpenOptions;
 use slog::Drain;
 use slog_syslog::Facility;
 
-use crate::config::{Config, ConfigLog};
+use crate::config::Config;
 
 pub fn create_log(config: &Config) -> Option<slog::Logger> {
     match config.log.log_type.as_str() {

@@ -6,9 +6,9 @@ pub mod subscription;
 pub mod types;
 
 use crate::lib::redis::stream::RedisStream;
-use crate::lib::redis::parser::{read_strict_string, read_bulk_string};
+use crate::lib::redis::parser::{read_strict_string, read_bulk_string, read_array};
 use crate::lib::redis::subscription::RedisSubscription;
-use crate::lib::redis::types::RedisError;
+use crate::lib::redis::types::{RedisError, RedisValue};
 
 pub struct RedisConnector<'a> {
     stream: &'a mut RedisStream
@@ -77,5 +77,29 @@ impl<'a>  RedisConnector<'a>  {
         }
 
         Ok(None)
+    }
+
+    /// Get master addr
+    pub fn get_master_add(&mut self,master_name: &str) -> Result<String, RedisError>  {
+        let cmd = format!("SENTINEL GET-MASTER-ADDR-BY-NAME {}\r\n", master_name);
+
+        if let Err(e) = self.stream.write(cmd.as_bytes()) {
+            return Err(RedisError::from_io_error(e));
+        }
+
+        let data = read_array(self.stream)?;
+
+        match data {
+            RedisValue::Array(d) => {
+                let addr = match d.get(0).unwrap() {
+                    RedisValue::BulkString(s) => {
+
+                    }
+                }
+                let port = d.get(1).unwrap();
+
+            },
+            _ => Err(RedisError::from_message("Impossibile, get_master_addr don't return array!"))
+        }
     }
 }

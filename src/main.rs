@@ -72,7 +72,7 @@ fn main() {
     if config.sentinels.is_some() {
         watch_sentinel(&config);
     } else {
-        eprintln!("Error: no sentinels found in config file");
+        error!(logger, "No sentinels found in config file");
     }
 
     let tcp_stream = TcpStream::connect("127.0.0.1:26000").unwrap();
