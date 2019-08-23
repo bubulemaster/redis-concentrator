@@ -91,15 +91,22 @@ impl<'a>  RedisConnector<'a>  {
 
         match data {
             RedisValue::Array(d) => {
-                let addr = match d.get(0).unwrap() {
-                    RedisValue::BulkString(s) => {
+                let addr = convert_to_string( d.get(0).unwrap() )?;
+                let port = convert_to_string( d.get(1).unwrap() )?;
 
-                    }
-                }
-                let port = d.get(1).unwrap();
-
+                Ok(String::from(format!("{}:{}", addr, port)))
             },
-            _ => Err(RedisError::from_message("Impossibile, get_master_addr don't return array!"))
+            _ => Err(RedisError::from_message("Impossible, get_master_addr don't return array!"))
         }
+    }
+}
+
+// Convert string or return error.
+fn convert_to_string(value: &RedisValue) -> Result<String, RedisError> {
+    match value {
+        RedisValue::BulkString(s) => {
+            Ok(String::from_utf8_lossy(s).to_string())
+        },
+        e => Err(RedisError::from_message(&format!("{:?} is not a BulkString!", e)))
     }
 }

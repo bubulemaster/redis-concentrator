@@ -74,22 +74,7 @@ fn main() {
     } else {
         error!(logger, "No sentinels found in config file");
     }
-
-    let tcp_stream = TcpStream::connect("127.0.0.1:26000").unwrap();
-
-    let timeout = std::time::Duration::from_millis(1000);
-    tcp_stream.set_read_timeout(Some(timeout));
-    tcp_stream.set_nonblocking(false);
-
-    let mut stream = NetworkStream::new(tcp_stream);
-    let mut redis_connector = RedisConnector::new(&mut stream);
-
-    /*println!("PING");
-
-    match redis_connector.ping() {
-        Ok(s) => println!("read: {:?}", s),
-        Err(e) => println!("Error: {:?}", e)
-    };*/
+/*
 
     println!("SUBSCRIBE");
 
@@ -102,9 +87,5 @@ fn main() {
         },
         Err(e) => println!("Error: {:?}", e)
     };
-
-    /*match redis_connector.get_string("a") {
-        Ok(s) => println!("read: {:?}", s),
-        Err(e) => println!("Error: {:?}", e)
-    };*/
+*/
 }

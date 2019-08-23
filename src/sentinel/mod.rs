@@ -7,7 +7,7 @@ use crate::lib::redis::types::RedisError;
 use crate::lib::redis::stream::network::NetworkStream;
 
 /// Create a redis connector to sentinel.
-fn create_redis_connector(address: &str) -> Result<RedisConnector, RedisError> {
+fn create_redis_connection(address: &str) -> Result<NetworkStream, RedisError> {
     let tcp_stream = match TcpStream::connect(address) {
         Ok(s) => s,
         Err(e) => return Err(RedisError::from_io_error(e))
@@ -24,30 +24,36 @@ fn create_redis_connector(address: &str) -> Result<RedisConnector, RedisError> {
         return Err(RedisError::from_io_error(e))
     }
 
-    let mut stream = NetworkStream::new(tcp_stream);
-    Ok(RedisConnector::new(&mut stream))
+    Ok(NetworkStream::new(tcp_stream))
 }
 
 /// Watch sentinel and send data to Redis or client.
-pub fn watch_sentinel(config: &Config) {
-    let mut sentinel = config.sentinels.unwrap();
+///
+/// Get first sentinel
+/// Get master
+///    +-> Connect to master
+/// Subscribe
+///
+/// Loop
+///   |  check if message from channel
+///   |    +-> master change connect to master
+///   |
+///   |  if channel close look next sentinel until found available or stop if no sentinel available
+///   |
+///   |  copy data from client to master
+///   |    +-> if data start send with old master, send error message to client
+///   |
+/// End loop
+pub fn watch_sentinel(config: &Config) -> Result<(), RedisError>{
+    let mut sentinel = config.sentinels.as_ref().unwrap();
 
     // TODO check if sentinel list is empty
-    let mut redis_connector = create_redis_connector(sentinel.get(0).unwrap());
+    let mut stream = create_redis_connection(sentinel.get(0).unwrap())?;
+    let mut redis_connector = RedisConnector::new(&mut stream);
 
-    // Get first sentinel
-    // Get master
-    //   +-> Connect to master
-    // Subscribe
+    let redis_group_name = redis_connector.get_master_add(&config.group_name)?;
 
-    // Loop
-    //  |  check if message from channel
-    //  |    +-> master change connect to master
-    //  |
-    //  |  if channel close look next sentinel until found available or stop if no sentinel available
-    //  |
-    //  |  copy data from client to master
-    //  |    +-> if data start send with old master, send error message to client
-    //  |
-    // End loop
+    println!(">>: {}", redis_group_name);
+
+    Ok(())
 }
