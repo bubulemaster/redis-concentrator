@@ -22,8 +22,8 @@ pub struct ConfigLog {
     #[serde(default = "default_level")]
     pub level: String,
     pub file: Option<String>,
-    #[serde(default = "default_header")]
-    pub header: bool
+    #[serde(default = "default_logo")]
+    pub logo: bool
 }
 
 impl ConfigLog {
@@ -32,7 +32,7 @@ impl ConfigLog {
             log_type: String::from("console"),
             level: String::from("info"),
             file: None,
-            header: true
+            logo: true
         }
     }
 }
@@ -48,7 +48,7 @@ fn default_level() -> String {
 }
 
 // Call by serde to have default value.
-fn default_header() -> bool {
+fn default_logo() -> bool {
     false
 }
 

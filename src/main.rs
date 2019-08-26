@@ -28,6 +28,17 @@ fn help() {
     println!();
 }
 
+fn logo(logger: &slog::Logger) {
+    // Thanks to http://patorjk.com/software/taag/#p=display&f=Doom&t=Red%20Concentrator
+    info!(logger, r"______         _   _____                            _             _             ");
+    info!(logger, r"| ___ \       | | /  __ \                          | |           | |            ");
+    info!(logger, r"| |_/ /___  __| | | /  \/ ___  _ __   ___ ___ _ __ | |_ _ __ __ _| |_ ___  _ __ ");
+    info!(logger, r"|    // _ \/ _` | | |    / _ \| '_ \ / __/ _ \ '_ \| __| '__/ _` | __/ _ \| '__|");
+    info!(logger, r"| |\ \  __/ (_| | | \__/\ (_) | | | | (_|  __/ | | | |_| | | (_| | || (_) | |   ");
+    info!(logger, r"\_| \_\___|\__,_|  \____/\___/|_| |_|\___\___|_| |_|\__|_|  \__,_|\__\___/|_|   ");
+    info!(logger, "");
+}
+
 fn main() {
     // Get command line options
     let args: Vec<String> = env::args().collect();
@@ -58,15 +69,8 @@ fn main() {
         }
     };
 
-    if config.log.header {
-        // Thanks to http://patorjk.com/software/taag/#p=display&f=Doom&t=Redis%20Concentrator
-        info!(logger, r"______         _ _       _____                            _             _             ");
-        info!(logger, r"| ___ \       | (_)     /  __ \                          | |           | |            ");
-        info!(logger, r"| |_/ /___  __| |_ ___  | /  \/ ___  _ __   ___ ___ _ __ | |_ _ __ __ _| |_ ___  _ __ ");
-        info!(logger, r"|    // _ \/ _` | / __| | |    / _ \| '_ \ / __/ _ \ '_ \| __| '__/ _` | __/ _ \| '__|");
-        info!(logger, r"| |\ \  __/ (_| | \__ \ | \__/\ (_) | | | | (_|  __/ | | | |_| | | (_| | || (_) | |   ");
-        info!(logger, r"\_| \_\___|\__,_|_|___/  \____/\___/|_| |_|\___\___|_| |_|\__|_|  \__,_|\__\___/|_|   ");
-        info!(logger, "");
+    if config.log.logo {
+        logo(&logger);
     }
 
     if config.sentinels.is_some() {
