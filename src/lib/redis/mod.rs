@@ -5,20 +5,18 @@ pub mod stream;
 pub mod subscription;
 pub mod types;
 
+use crate::lib::redis::parser::{read_array, read_bulk_string, read_strict_string};
 use crate::lib::redis::stream::RedisStream;
-use crate::lib::redis::parser::{read_strict_string, read_bulk_string, read_array};
 use crate::lib::redis::subscription::RedisSubscription;
 use crate::lib::redis::types::{RedisError, RedisValue};
 
 pub struct RedisConnector<'a> {
-    stream: &'a mut RedisStream
+    stream: &'a mut RedisStream,
 }
 
-impl<'a>  RedisConnector<'a>  {
-    pub fn new(stream: &'a mut RedisStream) -> RedisConnector {
-        RedisConnector {
-            stream
-        }
+impl<'a> RedisConnector<'a> {
+    pub fn new(stream: &'a mut dyn RedisStream) -> RedisConnector {
+        RedisConnector { stream }
     }
 
     /// Send PING command and wait PONG response.
@@ -34,7 +32,10 @@ impl<'a>  RedisConnector<'a>  {
 
         match response.as_str() {
             "PONG" => Ok(()),
-            e => Err(RedisError::from_message(&format!("Invalid ping response : {}", e)))
+            e => Err(RedisError::from_message(&format!(
+                "Invalid ping response : {}",
+                e
+            ))),
         }
     }
 
@@ -72,7 +73,10 @@ impl<'a>  RedisConnector<'a>  {
         if let Some(data) = data {
             return match std::str::from_utf8(&data) {
                 Ok(v) => Ok(Some(String::from(v))),
-                Err(e) => Err(RedisError::from_message(&format!("Invalid UTF-8 sequence: {}", e)))
+                Err(e) => Err(RedisError::from_message(&format!(
+                    "Invalid UTF-8 sequence: {}",
+                    e
+                ))),
             };
         }
 
@@ -80,7 +84,7 @@ impl<'a>  RedisConnector<'a>  {
     }
 
     /// Get master addr
-    pub fn get_master_add(&mut self,master_name: &str) -> Result<String, RedisError>  {
+    pub fn get_master_add(&mut self, master_name: &str) -> Result<String, RedisError> {
         let cmd = format!("SENTINEL GET-MASTER-ADDR-BY-NAME {}\r\n", master_name);
 
         if let Err(e) = self.stream.write(cmd.as_bytes()) {
@@ -91,12 +95,14 @@ impl<'a>  RedisConnector<'a>  {
 
         match data {
             RedisValue::Array(d) => {
-                let addr = convert_to_string( d.get(0).unwrap() )?;
-                let port = convert_to_string( d.get(1).unwrap() )?;
+                let addr = convert_to_string(d.get(0).unwrap())?;
+                let port = convert_to_string(d.get(1).unwrap())?;
 
                 Ok(String::from(format!("{}:{}", addr, port)))
-            },
-            _ => Err(RedisError::from_message("Impossible, get_master_addr don't return array!"))
+            }
+            _ => Err(RedisError::from_message(
+                "Impossible, get_master_addr don't return array!",
+            )),
         }
     }
 }
@@ -104,9 +110,10 @@ impl<'a>  RedisConnector<'a>  {
 // Convert string or return error.
 fn convert_to_string(value: &RedisValue) -> Result<String, RedisError> {
     match value {
-        RedisValue::BulkString(s) => {
-            Ok(String::from_utf8_lossy(s).to_string())
-        },
-        e => Err(RedisError::from_message(&format!("{:?} is not a BulkString!", e)))
+        RedisValue::BulkString(s) => Ok(String::from_utf8_lossy(s).to_string()),
+        e => Err(RedisError::from_message(&format!(
+            "{:?} is not a BulkString!",
+            e
+        ))),
     }
 }

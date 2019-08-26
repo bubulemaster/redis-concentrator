@@ -16,7 +16,7 @@ pub enum RedisValue {
     Integer(isize),
     String(String),
     BulkString(Vec<u8>),
-    Array(Vec<RedisValue>)
+    Array(Vec<RedisValue>),
 }
 
 /// An enum of all error kinds.
@@ -35,7 +35,7 @@ pub enum ErrorKind {
     /// An error not directly return by Redis.
     OtherError,
     /// If no data available on socket.
-    NoDataAvailable
+    NoDataAvailable,
 }
 
 /// Error when call Redis.
@@ -46,7 +46,7 @@ pub struct RedisError {
     /// Kind of error
     kind: ErrorKind,
     /// Message
-    message: Option<String>
+    message: Option<String>,
 }
 
 /// Redis error.
@@ -56,7 +56,7 @@ impl RedisError {
         RedisError {
             io_error: Some(e),
             message: None,
-            kind: ErrorKind::IoError
+            kind: ErrorKind::IoError,
         }
     }
 
@@ -65,7 +65,7 @@ impl RedisError {
         RedisError {
             io_error: None,
             message: Some(String::from("No data available!")),
-            kind: ErrorKind::NoDataAvailable
+            kind: ErrorKind::NoDataAvailable,
         }
     }
 
@@ -74,7 +74,7 @@ impl RedisError {
         RedisError {
             io_error: None,
             message: Some(String::from(e)),
-            kind: ErrorKind::OtherError
+            kind: ErrorKind::OtherError,
         }
     }
 
@@ -85,13 +85,13 @@ impl RedisError {
             "EXECABORT" => ErrorKind::ExecAbortError,
             "LOADING" => ErrorKind::BusyLoadingError,
             "NOSCRIPT" => ErrorKind::NoScriptError,
-            _ => ErrorKind::OtherError
+            _ => ErrorKind::OtherError,
         };
 
         RedisError {
             io_error: None,
             message: Some(String::from(message)),
-            kind
+            kind,
         }
     }
 
@@ -104,14 +104,33 @@ impl RedisError {
 impl std::fmt::Display for RedisError {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.kind {
-            ErrorKind::ResponseError => write!(fmt, "Redis unknow error: {}", self.message.as_ref().unwrap()),
             ErrorKind::IoError => write!(fmt, "IoError: {}", &self.io_error.as_ref().unwrap()),
-            ErrorKind::ResponseError => write!(fmt, "Redis response error: {}", self.message.as_ref().unwrap()),
-            ErrorKind::ExecAbortError => write!(fmt, "Redis execution abort: {}", self.message.as_ref().unwrap()),
-            ErrorKind::BusyLoadingError => write!(fmt, "Redis busy loading error: {}", self.message.as_ref().unwrap()),
-            ErrorKind::NoScriptError => write!(fmt, "Redis no script error: {}", self.message.as_ref().unwrap()),
-            ErrorKind::OtherError => write!(fmt, "Error (not Redis error): {}", self.message.as_ref().unwrap()),
-            ErrorKind::NoDataAvailable => write!(fmt, "Error: {}", self.message.as_ref().unwrap())
+            ErrorKind::ResponseError => write!(
+                fmt,
+                "Redis response error: {}",
+                self.message.as_ref().unwrap()
+            ),
+            ErrorKind::ExecAbortError => write!(
+                fmt,
+                "Redis execution abort: {}",
+                self.message.as_ref().unwrap()
+            ),
+            ErrorKind::BusyLoadingError => write!(
+                fmt,
+                "Redis busy loading error: {}",
+                self.message.as_ref().unwrap()
+            ),
+            ErrorKind::NoScriptError => write!(
+                fmt,
+                "Redis no script error: {}",
+                self.message.as_ref().unwrap()
+            ),
+            ErrorKind::OtherError => write!(
+                fmt,
+                "Error (not Redis error): {}",
+                self.message.as_ref().unwrap()
+            ),
+            ErrorKind::NoDataAvailable => write!(fmt, "Error: {}", self.message.as_ref().unwrap()),
         }
     }
 }

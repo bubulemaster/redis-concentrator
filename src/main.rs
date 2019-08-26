@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate serde_derive;
-extern crate serde_json;
 extern crate log;
+extern crate serde_json;
 #[macro_use]
 extern crate slog;
 
@@ -11,13 +11,10 @@ mod logging;
 mod sentinel;
 
 use std::env;
-use std::net::TcpStream;
 
-use crate::lib::redis::stream::network::NetworkStream;
-use crate::lib::redis::RedisConnector;
 use crate::config::get_config;
-use crate::sentinel::watch_sentinel;
 use crate::logging::create_log;
+use crate::sentinel::watch_sentinel;
 
 const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
 
@@ -30,12 +27,30 @@ fn help() {
 
 fn logo(logger: &slog::Logger) {
     // Thanks to http://patorjk.com/software/taag/#p=display&f=Doom&t=Red%20Concentrator
-    info!(logger, r"______         _   _____                            _             _             ");
-    info!(logger, r"| ___ \       | | /  __ \                          | |           | |            ");
-    info!(logger, r"| |_/ /___  __| | | /  \/ ___  _ __   ___ ___ _ __ | |_ _ __ __ _| |_ ___  _ __ ");
-    info!(logger, r"|    // _ \/ _` | | |    / _ \| '_ \ / __/ _ \ '_ \| __| '__/ _` | __/ _ \| '__|");
-    info!(logger, r"| |\ \  __/ (_| | | \__/\ (_) | | | | (_|  __/ | | | |_| | | (_| | || (_) | |   ");
-    info!(logger, r"\_| \_\___|\__,_|  \____/\___/|_| |_|\___\___|_| |_|\__|_|  \__,_|\__\___/|_|   ");
+    info!(
+        logger,
+        r"______         _   _____                            _             _             "
+    );
+    info!(
+        logger,
+        r"| ___ \       | | /  __ \                          | |           | |            "
+    );
+    info!(
+        logger,
+        r"| |_/ /___  __| | | /  \/ ___  _ __   ___ ___ _ __ | |_ _ __ __ _| |_ ___  _ __ "
+    );
+    info!(
+        logger,
+        r"|    // _ \/ _` | | |    / _ \| '_ \ / __/ _ \ '_ \| __| '__/ _` | __/ _ \| '__|"
+    );
+    info!(
+        logger,
+        r"| |\ \  __/ (_| | | \__/\ (_) | | | | (_|  __/ | | | |_| | | (_| | || (_) | |   "
+    );
+    info!(
+        logger,
+        r"\_| \_\___|\__,_|  \____/\___/|_| |_|\___\___|_| |_|\__|_|  \__,_|\__\___/|_|   "
+    );
     info!(logger, "");
 }
 
@@ -78,18 +93,18 @@ fn main() {
     } else {
         error!(logger, "No sentinels found in config file");
     }
-/*
+    /*
 
-    println!("SUBSCRIBE");
+        println!("SUBSCRIBE");
 
-    match redis_connector.subscribe("+switch-master") {
-        Ok(mut s) => {
-            loop {
-                let a = s.pool();
-                println!("Pool result: {:?}", a);
-            }
-        },
-        Err(e) => println!("Error: {:?}", e)
-    };
-*/
+        match redis_connector.subscribe("+switch-master") {
+            Ok(mut s) => {
+                loop {
+                    let a = s.pool();
+                    println!("Pool result: {:?}", a);
+                }
+            },
+            Err(e) => println!("Error: {:?}", e)
+        };
+    */
 }

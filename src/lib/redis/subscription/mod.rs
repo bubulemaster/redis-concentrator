@@ -8,12 +8,12 @@ use crate::lib::redis::parser::read_array;
 
 /// Structure when you subscribe to channel.
 pub struct RedisSubscription<'a> {
-    stream: &'a mut RedisStream,
+    stream: &'a mut dyn RedisStream,
     channel: String
 }
 
 impl<'a> RedisSubscription<'a> {
-    pub fn new(stream: &'a mut RedisStream, channel: String) -> RedisSubscription {
+    pub fn new(stream: &'a mut dyn RedisStream, channel: String) -> RedisSubscription {
         RedisSubscription {
             stream,
             channel

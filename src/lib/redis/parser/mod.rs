@@ -19,7 +19,7 @@ enum RedisType {
 
 /// Get one byte. If none, raise error.
 #[inline(always)]
-fn get_byte(stream: &mut RedisStream) -> Result<u8, RedisError> {
+fn get_byte(stream: &mut dyn RedisStream) -> Result<u8, RedisError> {
     match stream.get() {
         Ok(c) =>
             match c {
@@ -43,7 +43,7 @@ fn get_type(data: u8) -> Result<RedisType, RedisError> {
 }
 
 /// Read byte until "\r\n" and convert to string.
-fn read_string_from_stream(stream: &mut RedisStream) -> Result<String, RedisError> {
+fn read_string_from_stream(stream: &mut dyn RedisStream) -> Result<String, RedisError> {
     let data = match stream.get_until("\r\n".as_bytes()) {
         Ok(a) => a,
         Err(e) => return Err(RedisError::from_io_error(e))
@@ -55,7 +55,7 @@ fn read_string_from_stream(stream: &mut RedisStream) -> Result<String, RedisErro
 }
 
 /// Read only array size.
-fn read_array_size(stream: &mut RedisStream) -> Result<isize, RedisError> {
+fn read_array_size(stream: &mut dyn RedisStream) -> Result<isize, RedisError> {
     let header = check_error(stream)?;
 
     // First char must be '*'
@@ -84,7 +84,7 @@ fn what_is(data: &[u8]) -> String {
 }
 
 /// Read error message.
-fn read_error_from_stream(stream: &mut RedisStream) -> RedisError {
+fn read_error_from_stream(stream: &mut dyn RedisStream) -> RedisError {
     let mut message = match read_string_from_stream(stream) {
         Ok(m) => m,
         Err(e) => return e
@@ -103,7 +103,7 @@ fn read_error_from_stream(stream: &mut RedisStream) -> RedisError {
 /// Check if message contains error.
 /// If no error return Ok(u8) otherwise return Err(RedisError).
 /// The u8 is character checked to be error.
-fn check_error(stream: &mut RedisStream) -> Result<u8, RedisError> {
+fn check_error(stream: &mut dyn RedisStream) -> Result<u8, RedisError> {
     // First char must be '$'
     let c = get_byte(stream)?;
 
@@ -115,7 +115,7 @@ fn check_error(stream: &mut RedisStream) -> Result<u8, RedisError> {
 }
 
 /// Read byte until "\r\n" and convert to integer.
-fn read_integer_from_stream(stream: &mut RedisStream) -> Result<isize, RedisError> {
+fn read_integer_from_stream(stream: &mut dyn RedisStream) -> Result<isize, RedisError> {
     let size = read_string_from_stream(stream)?;
 
     match size.parse::<isize>() {
@@ -125,7 +125,7 @@ fn read_integer_from_stream(stream: &mut RedisStream) -> Result<isize, RedisErro
 }
 
 /// Read all byte and convert to [u8].
-fn read_bulk_string_from_stream(stream: &mut RedisStream) -> Result<Option<Vec<u8>>, RedisError> {
+fn read_bulk_string_from_stream(stream: &mut dyn RedisStream) -> Result<Option<Vec<u8>>, RedisError> {
     // Get first part: the size
     let size = read_string_from_stream(stream)?;
 
@@ -153,7 +153,7 @@ fn read_bulk_string_from_stream(stream: &mut RedisStream) -> Result<Option<Vec<u
 }
 
 /// Read an array.
-fn read_array_from_stream(stream: &mut RedisStream, array_size: usize) -> Result<RedisValue, RedisError> {
+fn read_array_from_stream(stream: &mut dyn RedisStream, array_size: usize) -> Result<RedisValue, RedisError> {
     let mut result: Vec<RedisValue> = Vec::with_capacity(array_size);
 
     for _ in 0..array_size {
@@ -198,7 +198,7 @@ fn read_array_from_stream(stream: &mut RedisStream, array_size: usize) -> Result
 /// Read strict string, not bulk string.
 /// Must contain '\r\n' at end (but not include in result).
 #[allow(dead_code)]
-pub fn read_strict_string(stream: &mut RedisStream) -> Result<String, RedisError> {
+pub fn read_strict_string(stream: &mut dyn RedisStream) -> Result<String, RedisError> {
     let header = check_error(stream)?;
 
     if header != REDIS_TYPE_STRING {
@@ -210,7 +210,7 @@ pub fn read_strict_string(stream: &mut RedisStream) -> Result<String, RedisError
 
 /// Read integer value.
 #[allow(dead_code)]
-pub fn read_integer(stream: &mut RedisStream) -> Result<isize, RedisError> {
+pub fn read_integer(stream: &mut dyn RedisStream) -> Result<isize, RedisError> {
     let header = check_error(stream)?;
 
     // First char must be ':'
@@ -224,7 +224,7 @@ pub fn read_integer(stream: &mut RedisStream) -> Result<isize, RedisError> {
 /// Read bulk string.
 /// Bulk string can contain non printable char.
 #[allow(dead_code)]
-pub fn read_bulk_string(stream: &mut RedisStream) -> Result<Option<Vec<u8>>, RedisError> {
+pub fn read_bulk_string(stream: &mut dyn RedisStream) -> Result<Option<Vec<u8>>, RedisError> {
     let header = check_error(stream)?;
 
     // First char must be '$'
@@ -237,7 +237,7 @@ pub fn read_bulk_string(stream: &mut RedisStream) -> Result<Option<Vec<u8>>, Red
 
 /// Read an array.
 #[allow(dead_code)]
-pub fn read_array(stream: &mut RedisStream) -> Result<RedisValue, RedisError> {
+pub fn read_array(stream: &mut dyn RedisStream) -> Result<RedisValue, RedisError> {
     let array_size = read_array_size(stream)?;
 
     if array_size < 0 {
