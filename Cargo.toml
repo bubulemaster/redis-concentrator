@@ -7,9 +7,7 @@ description = "Redis Concentrator is tool to easly connect your application to R
 repository = "..."
 readme = "README.md"
 keywords = ["redis", "sentinel", "cluster"]
-license = "Apache-2.0"
-license-file = "LICENSE-APACHE"
-maintenance = { status = "actively-developed" }
+license-file = "LICENSE"
 
 [dependencies]
 # Config file read
