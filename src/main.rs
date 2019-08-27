@@ -89,7 +89,7 @@ fn main() {
     }
 
     if config.sentinels.is_some() {
-        watch_sentinel(&config);
+        watch_sentinel(&config, &logger);
     } else {
         error!(logger, "No sentinels found in config file");
     }

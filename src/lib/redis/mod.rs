@@ -84,7 +84,7 @@ impl<'a> RedisConnector<'a> {
     }
 
     /// Get master addr
-    pub fn get_master_add(&mut self, master_name: &str) -> Result<String, RedisError> {
+    pub fn get_master_addr(&mut self, master_name: &str) -> Result<String, RedisError> {
         let cmd = format!("SENTINEL GET-MASTER-ADDR-BY-NAME {}\r\n", master_name);
 
         if let Err(e) = self.stream.write(cmd.as_bytes()) {
@@ -107,12 +107,23 @@ impl<'a> RedisConnector<'a> {
     }
 }
 
-// Convert string or return error.
-fn convert_to_string(value: &RedisValue) -> Result<String, RedisError> {
+/// Convert string or return error.
+pub fn convert_to_string(value: &RedisValue) -> Result<String, RedisError> {
     match value {
         RedisValue::BulkString(s) => Ok(String::from_utf8_lossy(s).to_string()),
         e => Err(RedisError::from_message(&format!(
             "{:?} is not a BulkString!",
+            e
+        ))),
+    }
+}
+
+/// Convert string or return error.
+pub fn convert_to_integer(value: &RedisValue) -> Result<isize, RedisError> {
+    match value {
+        RedisValue::Integer(s) => Ok(s.clone()),
+        e => Err(RedisError::from_message(&format!(
+            "{:?} is not a Integer!",
             e
         ))),
     }
