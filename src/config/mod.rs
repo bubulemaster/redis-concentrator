@@ -49,7 +49,7 @@ fn default_level() -> String {
 
 // Call by serde to have default value.
 fn default_logo() -> bool {
-    false
+    true
 }
 
 ///

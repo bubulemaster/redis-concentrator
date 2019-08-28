@@ -6,26 +6,42 @@ extern crate slog_term;
 extern crate slog_syslog;
 
 use std::fs::OpenOptions;
-use slog::Drain;
+use slog::{Drain, Level, Fuse};
 use slog_syslog::Facility;
 
 use crate::config::Config;
 
 pub fn create_log(config: &Config) -> Option<slog::Logger> {
+    // Get log level
+    let log_level = match config.log.level.as_str().to_lowercase().as_str() {
+        "critical" => Level::Critical,
+        "error" => Level::Error,
+        "warning" => Level::Warning,
+        "info" => Level::Info,
+        "debug" => Level::Debug,
+        "trace" => Level::Trace,
+        e => {
+            println!("Debug level '{}' not supported!", e);
+            return None;
+        }
+    };
+
     match config.log.log_type.as_str() {
-        "console" => Some(create_console_log()),
+        "console" => Some(create_console_log(log_level)),
         "file" =>
             match &config.log.file {
-                Some(s) => Some(create_file_log(s.to_string())),
+                Some(s) => Some(create_file_log(s.to_string(), log_level)),
                 None => None
             },
-        "syslog" => Some(create_syslog_log()),
-        e => // TODO
-        None
+        "syslog" => Some(create_syslog_log(log_level)),
+        e => {
+            println!("Log type '{}' not supported!", e);
+            return None;
+        }
     }
 }
 
-fn create_file_log(filename: String) -> slog::Logger  {
+fn create_file_log(filename: String, log_level: Level) -> slog::Logger  {
     let file = OpenOptions::new()
         .create(true)
         .write(true)
@@ -36,20 +52,26 @@ fn create_file_log(filename: String) -> slog::Logger  {
     // create logger
     let decorator = slog_term::PlainSyncDecorator::new(file);
     let drain = slog_term::FullFormat::new(decorator).build().fuse();
+    let drain = slog::LevelFilter::new(drain, log_level).map(Fuse);
+
     slog::Logger::root(drain, o!())
 }
 
-fn create_console_log() -> slog::Logger {
+fn create_console_log(log_level: Level) -> slog::Logger {
     let decorator = slog_term::PlainDecorator::new(std::io::stdout());
     let drain = slog_term::CompactFormat::new(decorator).build().fuse();
     let drain = slog_async::Async::new(drain).build().fuse();
+    let drain = slog::LevelFilter::new(drain, log_level).map(Fuse);
 
     slog::Logger::root(drain, o!())
 }
 
-fn create_syslog_log() -> slog::Logger {
+fn create_syslog_log(log_level: Level) -> slog::Logger {
     // TODO allow change facility
     let syslog = slog_syslog::unix_3164(Facility::LOG_USER).unwrap();
-    let root = slog::Logger::root(syslog.fuse(), o!());
-    root.new(o!())
+    let drain = slog::LevelFilter::new(syslog.fuse(), log_level).map(Fuse);
+    let drain = slog::Logger::root(drain, o!());
+    //root.new(o!())
+
+    slog::Logger::root(drain, o!())
 }

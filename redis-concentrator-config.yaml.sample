@@ -9,7 +9,7 @@ sentinels:
 log:
   type: console
   level: info
-  header: true
+  logo: true
 #  type: file
 #  file: "dddd"
 #  type: syslog
