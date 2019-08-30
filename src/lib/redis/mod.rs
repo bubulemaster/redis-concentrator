@@ -11,7 +11,7 @@ use crate::lib::redis::subscription::RedisSubscription;
 use crate::lib::redis::types::{RedisError, RedisValue};
 
 pub struct RedisConnector<'a> {
-    stream: &'a mut RedisStream,
+    stream: &'a mut dyn RedisStream,
 }
 
 impl<'a> RedisConnector<'a> {
