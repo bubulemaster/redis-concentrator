@@ -1,7 +1,7 @@
 extern crate serde_yaml;
 
-use std::io::{Error, ErrorKind, Read};
 use std::fs::File;
+use std::io::{Error, ErrorKind, Read};
 
 /// Config structure of Redis Concentrator
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
@@ -11,7 +11,7 @@ pub struct Config {
     pub group_name: String,
     pub sentinels: Option<Vec<String>>,
     #[serde(default = "ConfigLog::default")]
-    pub log: ConfigLog
+    pub log: ConfigLog,
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
@@ -23,16 +23,16 @@ pub struct ConfigLog {
     pub level: String,
     pub file: Option<String>,
     #[serde(default = "default_logo")]
-    pub logo: bool
+    pub logo: bool,
 }
 
 impl ConfigLog {
-    pub fn default() -> ConfigLog {
+    pub fn default() -> Self {
         ConfigLog {
             log_type: String::from("console"),
             level: String::from("info"),
             file: None,
-            logo: true
+            logo: true,
         }
     }
 }

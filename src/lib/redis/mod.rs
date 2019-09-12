@@ -14,7 +14,7 @@ pub struct RedisConnector {
 }
 
 impl RedisConnector {
-    pub fn new(stream: Box<dyn RedisStream>) -> RedisConnector {
+    pub fn new(stream: Box<dyn RedisStream>) -> Self {
         RedisConnector { stream }
     }
 

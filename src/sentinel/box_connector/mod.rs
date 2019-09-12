@@ -129,40 +129,7 @@ impl<'a> RedisBoxConnector<'a> {
             redis_master_addr,
         })
     }
-    /*
-        pub fn connect(&'a mut self, group_name: String) -> Result<(), RedisError> {
-            self.group_name = Some(group_name);
 
-            //self.sentinel_connector = Some(RedisConnector::new(&mut self.sentinel_stream));
-
-            let mut a = self.sentinel_connector.as_ref().unwrap();
-
-            let b = a.get_master_addr(self.group_name.as_ref().unwrap())?;
-
-            // Connect to master
-            self.redis_master_addr = Some(b);
-
-            debug!(
-                self.logger,
-                "Create network connection to redis master: {}",
-                self.redis_master_addr.as_ref().unwrap()
-            );
-
-            self.master_stream = Some(create_master_connection(
-                self.redis_master_addr.as_ref().unwrap(),
-            )?);
-
-            // Subscribe to Sentinel to notify when master change
-            self.sentinel_subscription = Some(
-                self.sentinel_connector
-                    .as_ref()
-                    .unwrap()
-                    .subscribe("+switch-master")?,
-            );
-
-            Ok(())
-        }
-    */
     /// Pool data.
     pub fn pool(&mut self) -> Result<RedisValue, RedisError> {
         self.sentinel_subscription.pool()

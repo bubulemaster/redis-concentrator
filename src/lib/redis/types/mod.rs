@@ -52,7 +52,7 @@ pub struct RedisError {
 /// Redis error.
 impl RedisError {
     /// From std::io::Error
-    pub fn from_io_error(e: std::io::Error) -> RedisError {
+    pub fn from_io_error(e: std::io::Error) -> Self {
         RedisError {
             io_error: Some(e),
             message: None,
@@ -61,7 +61,7 @@ impl RedisError {
     }
 
     /// Generic error.
-    pub fn from_no_data() -> RedisError {
+    pub fn from_no_data() -> Self {
         RedisError {
             io_error: None,
             message: Some(String::from("No data available!")),
@@ -70,7 +70,7 @@ impl RedisError {
     }
 
     /// Generic error.
-    pub fn from_message(e: &str) -> RedisError {
+    pub fn from_message(e: &str) -> Self {
         RedisError {
             io_error: None,
             message: Some(String::from(e)),
@@ -79,7 +79,7 @@ impl RedisError {
     }
 
     /// From error return by Redis.
-    pub fn from_redis(code: &str, message: &str) -> RedisError {
+    pub fn from_redis(code: &str, message: &str) -> Self {
         let kind = match code {
             "ERR" => ErrorKind::ResponseError,
             "EXECABORT" => ErrorKind::ExecAbortError,

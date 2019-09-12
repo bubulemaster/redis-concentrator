@@ -13,7 +13,7 @@ pub struct RedisSubscription {
 }
 
 impl<'a> RedisSubscription {
-    pub fn new(stream: Box<dyn RedisStream>, channel: String) -> RedisSubscription {
+    pub fn new(stream: Box<dyn RedisStream>, channel: String) -> Self {
         RedisSubscription { stream, channel }
     }
 

@@ -1,11 +1,11 @@
 //! This module contain abstract type of network.
 //!
 
-use std::net::TcpStream;
+use crate::lib::redis::stream::RedisStream;
 use std::io::ErrorKind;
 use std::io::Read;
 use std::io::Write;
-use crate::lib::redis::stream::RedisStream;
+use std::net::TcpStream;
 
 const BUFFER_SIZE: usize = 2048;
 
@@ -19,10 +19,10 @@ pub struct NetworkStream {
 }
 
 impl NetworkStream {
-    pub fn new(stream: TcpStream) -> NetworkStream {
+    pub fn new(stream: TcpStream) -> Self {
         NetworkStream {
             stream,
-            buf: Vec::with_capacity(BUFFER_SIZE)
+            buf: Vec::with_capacity(BUFFER_SIZE),
         }
     }
 
@@ -31,21 +31,26 @@ impl NetworkStream {
         let mut buf = [0; BUFFER_SIZE];
 
         match self.stream.read(&mut buf) {
-            Ok(len) =>
+            Ok(len) => {
                 if len == 0 {
                     // If 0, that mean socket close other raise WouldBlock.
-                    Err(std::io::Error::new(ErrorKind::BrokenPipe, "Server close socket"))
+                    Err(std::io::Error::new(
+                        ErrorKind::BrokenPipe,
+                        "Server close socket",
+                    ))
                 } else {
                     self.buf.extend_from_slice(&buf[0..len]);
                     Ok(())
-                },
-            Err(e) =>
+                }
+            }
+            Err(e) => {
                 if e.kind() != ErrorKind::WouldBlock {
                     Err(e)
                 } else {
                     // In case of WouldBlock, no data available.
                     Ok(())
                 }
+            }
         }
     }
 
@@ -68,29 +73,29 @@ impl NetworkStream {
                     } else {
                         pattern_index = 0;
                     }
-                },
-                None => return None
+                }
+                None => return None,
             }
         }
 
         None
     }
-
 }
 
 impl RedisStream for NetworkStream {
-    fn write(&mut self, data: &[u8]) ->  std::io::Result<()> {
+    fn write(&mut self, data: &[u8]) -> std::io::Result<()> {
         match self.stream.write(data) {
-            Ok(len) =>
+            Ok(len) => {
                 if len != data.len() {
-                    Err(
-                        std::io::Error::new(
-                            ErrorKind::WriteZero,
-                            format!("Write only {} bytes on {}", len, data.len())))
+                    Err(std::io::Error::new(
+                        ErrorKind::WriteZero,
+                        format!("Write only {} bytes on {}", len, data.len()),
+                    ))
                 } else {
                     Ok(())
-                },
-            Err(e) => Err(e)
+                }
+            }
+            Err(e) => Err(e),
         }
     }
 
@@ -150,7 +155,7 @@ impl RedisStream for NetworkStream {
 
                     if old_buf_size == self.buf.len() {
                         // No more data read, stop search.
-                        return Ok(Vec::new())
+                        return Ok(Vec::new());
                     } else {
                         index = old_buf_size;
                     }
