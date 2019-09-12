@@ -50,7 +50,15 @@ fn create_master_connection(address: &str) -> Result<TcpStream, RedisError> {
 
 /// Redis callback.
 pub trait RedisBoxConnectorCallback {
-    fn change_master(&mut self);
+    /// Call when change master address.
+    fn change_master(
+        &mut self,
+        group_name: &str,
+        old_master_ip: String,
+        old_master_port: u16,
+        new_master_ip: String,
+        new_master_port: u16,
+    );
 }
 
 /// Redis box connector.
@@ -68,7 +76,23 @@ pub struct RedisBoxConnector<'a> {
 }
 
 impl<'a> RedisBoxConnectorCallback for RedisBoxConnector<'a> {
-    fn change_master(&mut self) {}
+    fn change_master(
+        &mut self,
+        group_name: &str,
+        old_master_ip: String,
+        old_master_port: u16,
+        new_master_ip: String,
+        new_master_port: u16,
+    ) {
+        debug!(
+            self.logger,
+            "Old: {}:{}  /  New: {}:{}",
+            old_master_ip,
+            old_master_port,
+            new_master_ip,
+            new_master_port
+        )
+    }
 }
 
 impl<'a> RedisBoxConnector<'a> {
