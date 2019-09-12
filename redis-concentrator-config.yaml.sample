@@ -8,7 +8,7 @@ sentinels:
   - 127.0.0.1:26002
 log:
   type: console
-  level: info
+  level: debug
   logo: true
 #  type: file
 #  file: "dddd"

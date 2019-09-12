@@ -7,15 +7,14 @@ pub mod types;
 
 use crate::lib::redis::parser::{read_array, read_bulk_string, read_strict_string};
 use crate::lib::redis::stream::RedisStream;
-use crate::lib::redis::subscription::RedisSubscription;
 use crate::lib::redis::types::{RedisError, RedisValue};
 
-pub struct RedisConnector<'a> {
-    stream: &'a mut dyn RedisStream,
+pub struct RedisConnector {
+    stream: Box<dyn RedisStream>,
 }
 
-impl<'a> RedisConnector<'a> {
-    pub fn new(stream: &'a mut dyn RedisStream) -> RedisConnector {
+impl RedisConnector {
+    pub fn new(stream: Box<dyn RedisStream>) -> RedisConnector {
         RedisConnector { stream }
     }
 
@@ -28,7 +27,7 @@ impl<'a> RedisConnector<'a> {
             return Err(RedisError::from_io_error(e));
         }
 
-        let response = read_strict_string(self.stream)?;
+        let response = read_strict_string(&mut self.stream)?;
 
         match response.as_str() {
             "PONG" => Ok(()),
@@ -37,20 +36,6 @@ impl<'a> RedisConnector<'a> {
                 e
             ))),
         }
-    }
-
-    /// Subscribe to channel.
-    /// Warning, this is blocking method.
-    #[allow(dead_code)]
-    pub fn subscribe(&mut self, channel: &str) -> Result<RedisSubscription, RedisError> {
-        let cmd = format!("SUBSCRIBE {}\r\n", channel);
-        let cmd = cmd.as_bytes();
-
-        if let Err(e) = self.stream.write(cmd) {
-            return Err(RedisError::from_io_error(e));
-        }
-
-        Ok(RedisSubscription::new(self.stream, String::from(channel)))
     }
 
     /// Get bulk string.
@@ -62,7 +47,7 @@ impl<'a> RedisConnector<'a> {
             return Err(RedisError::from_io_error(e));
         }
 
-        read_bulk_string(self.stream)
+        read_bulk_string(&mut self.stream)
     }
 
     /// Get string
@@ -91,7 +76,7 @@ impl<'a> RedisConnector<'a> {
             return Err(RedisError::from_io_error(e));
         }
 
-        let data = read_array(self.stream)?;
+        let data = read_array(&mut self.stream)?;
 
         match data {
             RedisValue::Array(d) => {

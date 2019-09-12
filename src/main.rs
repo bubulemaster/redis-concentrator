@@ -54,6 +54,7 @@ fn logo(logger: &slog::Logger) {
     info!(logger, "");
 }
 
+// TODO return error value
 fn main() {
     // Get command line options
     let args: Vec<String> = env::args().collect();
@@ -89,22 +90,10 @@ fn main() {
     }
 
     if config.sentinels.is_some() {
-        watch_sentinel(&config, &logger);
+        if let Err(e) = watch_sentinel(&config, &logger) {
+            error!(logger, "Error when running : {:?}", e);
+        }
     } else {
         error!(logger, "No sentinels found in config file");
     }
-    /*
-
-        println!("SUBSCRIBE");
-
-        match redis_connector.subscribe("+switch-master") {
-            Ok(mut s) => {
-                loop {
-                    let a = s.pool();
-                    println!("Pool result: {:?}", a);
-                }
-            },
-            Err(e) => println!("Error: {:?}", e)
-        };
-    */
 }

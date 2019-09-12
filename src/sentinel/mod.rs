@@ -1,63 +1,26 @@
-//! This module contain routine to watch sentinels.
+//! This module contains routine to watch sentinels.
 //!
 use crate::config::Config;
-use crate::lib::redis::stream::network::NetworkStream;
+use crate::lib::redis::convert_to_string;
 use crate::lib::redis::types::{ErrorKind, RedisError, RedisValue};
-use crate::lib::redis::{convert_to_string, RedisConnector};
-use std::net::TcpStream;
+use crate::sentinel::box_connector::{RedisBoxConnector, RedisBoxConnectorCallback};
 
-/// Create a redis connector to sentinel.
-fn create_redis_connection(address: &str) -> Result<NetworkStream, RedisError> {
-    let tcp_stream = match TcpStream::connect(address) {
-        Ok(s) => s,
-        Err(e) => return Err(RedisError::from_io_error(e)),
-    };
-
-    // TODO allow to set value cause WouldBlock use it.
-    let timeout = std::time::Duration::from_millis(200);
-
-    if let Err(e) = tcp_stream.set_read_timeout(Some(timeout)) {
-        return Err(RedisError::from_io_error(e));
-    }
-
-    if let Err(e) = tcp_stream.set_nonblocking(false) {
-        return Err(RedisError::from_io_error(e));
-    }
-
-    Ok(NetworkStream::new(tcp_stream))
-}
-
-/// Create a raw tcp connection.
-fn create_master_connection(address: &str) -> Result<TcpStream, RedisError> {
-    let tcp_stream = match TcpStream::connect(address) {
-        Ok(s) => s,
-        Err(e) => return Err(RedisError::from_io_error(e)),
-    };
-
-    // TODO allow to set value cause WouldBlock use it.
-    let timeout = std::time::Duration::from_millis(200);
-
-    if let Err(e) = tcp_stream.set_read_timeout(Some(timeout)) {
-        return Err(RedisError::from_io_error(e));
-    }
-
-    if let Err(e) = tcp_stream.set_nonblocking(false) {
-        return Err(RedisError::from_io_error(e));
-    }
-
-    Ok(tcp_stream)
-}
+mod box_connector;
 
 /// Check if no data available.
 fn manage_redis_subscription_error(error: RedisError) -> Result<(), RedisError> {
     match error.kind() {
         ErrorKind::NoDataAvailable => return Ok(()),
-        e => return Err(error),
+        _ => return Err(error),
     }
 }
 
 /// If we receive message.
-fn manage_subscription_data(data: RedisValue, logger: &slog::Logger) -> Result<(), RedisError> {
+fn manage_subscription_data(
+    data: RedisValue,
+    logger: &slog::Logger,
+    callback: &dyn RedisBoxConnectorCallback,
+) -> Result<(), RedisError> {
     match data {
         RedisValue::Array(data) => {
             let msg_type = convert_to_string(data.get(0).unwrap())?;
@@ -72,7 +35,7 @@ fn manage_subscription_data(data: RedisValue, logger: &slog::Logger) -> Result<(
                 data
             );
 
-            manage_subscription_message(&msg_type, &channel, &data, logger)
+            manage_subscription_message(&msg_type, &channel, &data, logger, callback)
         }
         _ => Err(RedisError::from_message(
             "Impossible, subscription don't return array!",
@@ -86,10 +49,11 @@ fn manage_subscription_message(
     channel: &str,
     data: &RedisValue,
     logger: &slog::Logger,
+    callback: &dyn RedisBoxConnectorCallback,
 ) -> Result<(), RedisError> {
     match msg_type {
         "subscribe" => manage_subscription_message_type_subscribe(channel, data, logger),
-        "message" => manage_subscription_message_type_message(channel, data, logger),
+        "message" => manage_subscription_message_type_message(channel, data, logger, callback),
         e => {
             warn!(logger, "Unknow message type '{}'!", e);
             Ok(())
@@ -102,6 +66,7 @@ fn manage_subscription_message_type_message(
     channel: &str,
     data: &RedisValue,
     logger: &slog::Logger,
+    callback: &dyn RedisBoxConnectorCallback,
 ) -> Result<(), RedisError> {
     /*
     1) "message"
@@ -157,31 +122,16 @@ fn manage_subscription_message_type_subscribe(
 ///   |
 /// End loop
 pub fn watch_sentinel(config: &Config, logger: &slog::Logger) -> Result<(), RedisError> {
-    let mut sentinel = config.sentinels.as_ref().unwrap();
+    let sentinels_list = config.sentinels.as_ref().unwrap();
 
     // TODO check if sentinel list is empty
-    let redis_sentinel_addr = sentinel.get(0).unwrap();
-    debug!(
-        logger,
-        "Create network connection to redis sentinel: {}", &redis_sentinel_addr
-    );
-    let mut stream = create_redis_connection(redis_sentinel_addr)?;
-    let mut redis_connector = RedisConnector::new(&mut stream);
+    let redis_sentinel_addr = sentinels_list.get(0).unwrap();
 
-    // Connect to master
-    let master_addr = redis_connector.get_master_addr(&config.group_name)?;
-    debug!(
-        logger,
-        "Create network connection to redis master: {}", &master_addr
-    );
-    let master_connection = create_master_connection(&master_addr)?;
-
-    // Subscribe to Sentinel to notify when master change
-    let mut sentinel_subscription = redis_connector.subscribe("+switch-master")?;
+    let mut redis_box = RedisBoxConnector::new(redis_sentinel_addr, &config.group_name, logger)?;
 
     loop {
-        match sentinel_subscription.pool() {
-            Ok(data) => manage_subscription_data(data, logger)?,
+        match redis_box.pool() {
+            Ok(data) => manage_subscription_data(data, logger, &redis_box)?,
             Err(e) => manage_redis_subscription_error(e)?,
         };
     }

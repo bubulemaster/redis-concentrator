@@ -1,32 +1,41 @@
 //! This module contain async subscription structure.
 //!
 
-use std::fmt::{Debug, Formatter, Error};
+use crate::lib::redis::parser::read_array;
 use crate::lib::redis::stream::RedisStream;
 use crate::lib::redis::types::{RedisError, RedisValue};
-use crate::lib::redis::parser::read_array;
+use std::fmt::{Debug, Error, Formatter};
 
 /// Structure when you subscribe to channel.
-pub struct RedisSubscription<'a> {
-    stream: &'a mut dyn RedisStream,
-    channel: String
+pub struct RedisSubscription {
+    stream: Box<dyn RedisStream>,
+    channel: String,
 }
 
-impl<'a> RedisSubscription<'a> {
-    pub fn new(stream: &'a mut dyn RedisStream, channel: String) -> RedisSubscription {
-        RedisSubscription {
-            stream,
-            channel
+impl<'a> RedisSubscription {
+    pub fn new(stream: Box<dyn RedisStream>, channel: String) -> RedisSubscription {
+        RedisSubscription { stream, channel }
+    }
+
+    /// Start subscription.
+    pub fn subscribe(&mut self) -> Result<(), RedisError> {
+        let cmd = format!("SUBSCRIBE {}\r\n", &self.channel);
+        let cmd = cmd.as_bytes();
+
+        if let Err(e) = self.stream.write(cmd) {
+            return Err(RedisError::from_io_error(e));
         }
+
+        Ok(())
     }
 
     /// Pool new message.
     pub fn pool(&mut self) -> Result<RedisValue, RedisError> {
-        read_array(self.stream)
+        read_array(&mut self.stream)
     }
 }
 
-impl<'a> Debug for RedisSubscription<'a> {
+impl<'a> Debug for RedisSubscription {
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         write!(fmt, "RedisSubscription(channel='{}')", &self.channel)
     }
