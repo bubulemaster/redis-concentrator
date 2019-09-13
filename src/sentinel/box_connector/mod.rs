@@ -58,7 +58,7 @@ pub trait RedisBoxConnectorCallback {
         old_master_port: u16,
         new_master_ip: String,
         new_master_port: u16,
-    );
+    ) -> Result<(), RedisError>;
 }
 
 /// Redis box connector.
@@ -70,7 +70,7 @@ pub struct RedisBoxConnector<'a> {
     /// Redis subscription
     sentinel_subscription: RedisSubscription,
     /// Redis group name.
-    //group_name: String,
+    group_name: String,
     /// Current Redis master.
     redis_master_addr: String,
 }
@@ -83,15 +83,30 @@ impl<'a> RedisBoxConnectorCallback for RedisBoxConnector<'a> {
         old_master_port: u16,
         new_master_ip: String,
         new_master_port: u16,
-    ) {
+    ) -> Result<(), RedisError> {
+        if self.group_name.as_str() != group_name {
+            return Ok(());
+        }
+
         debug!(
             self.logger,
-            "Old: {}:{}  /  New: {}:{}",
+            "Receive change master notification Old: {}:{} / New: {}:{} for {}",
             old_master_ip,
             old_master_port,
             new_master_ip,
-            new_master_port
-        )
+            new_master_port,
+            group_name
+        );
+
+        info!(
+            self.logger,
+            "Switch to new master {}:{}", new_master_ip, new_master_port
+        );
+
+        self.master_stream =
+            create_master_connection(&format!("{}:{}", new_master_ip, new_master_port))?;
+
+        Ok(())
     }
 }
 
@@ -125,7 +140,7 @@ impl<'a> RedisBoxConnector<'a> {
             logger,
             master_stream,
             sentinel_subscription,
-            //group_name: None,
+            group_name: String::from(group_name),
             redis_master_addr,
         })
     }

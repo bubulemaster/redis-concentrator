@@ -74,7 +74,7 @@ fn manage_subscription_message_type_message(
     3) "cluster_1 127.0.0.1 6001 127.0.0.1 6000" Groupe name : Old master -> New master
     */
     let message = convert_to_string(data)?;
-    info!(logger, "{:?}", message);
+    debug!(logger, "{:?}", message);
 
     let split = message.split(' ');
     let vec = split.collect::<Vec<&str>>();
@@ -91,9 +91,7 @@ fn manage_subscription_message_type_message(
         old_master_port,
         new_master_ip,
         new_master_port,
-    );
-
-    Ok(())
+    )
 }
 
 /// When receive a message type subscribe from subscription.
