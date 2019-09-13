@@ -1,6 +1,5 @@
 ---
-bind: 127.0.0.1
-port: 6578
+bind: 127.0.0.1:6578
 group_name: "cluster_1"
 sentinels:
   - 127.0.0.1:26000

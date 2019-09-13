@@ -5,6 +5,7 @@ extern crate serde_json;
 #[macro_use]
 extern crate slog;
 
+mod client;
 mod config;
 mod lib;
 mod logging;
@@ -12,6 +13,7 @@ mod sentinel;
 
 use std::env;
 
+use crate::client::watch_client;
 use crate::config::get_config;
 use crate::logging::create_log;
 use crate::sentinel::watch_sentinel;
@@ -77,7 +79,15 @@ fn main() {
     };
 
     // Set log
-    let logger = match create_log(&config) {
+    let logger_client = match create_log(&config) {
+        Some(l) => l,
+        None => {
+            eprintln!("Error: cannot create log!");
+            std::process::exit(-1);
+        }
+    };
+
+    let logger_server = match create_log(&config) {
         Some(l) => l,
         None => {
             eprintln!("Error: cannot create log!");
@@ -86,14 +96,19 @@ fn main() {
     };
 
     if config.log.logo {
-        logo(&logger);
+        logo(&logger_server);
     }
 
     if config.sentinels.is_some() {
-        if let Err(e) = watch_sentinel(&config, &logger) {
-            error!(logger, "Error when running : {:?}", e);
+        // TODO create channel to allow communicate between client connection and sentinel watcher
+        if let Err(e) = watch_client(&config, logger_client) {
+            error!(logger_server, "Error from listen client : {:?}", e);
+        }
+
+        if let Err(e) = watch_sentinel(&config, &logger_server) {
+            error!(logger_server, "Error when running : {:?}", e);
         }
     } else {
-        error!(logger, "No sentinels found in config file");
+        error!(logger_server, "No sentinels found in config file");
     }
 }

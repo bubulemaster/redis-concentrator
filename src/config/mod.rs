@@ -7,7 +7,6 @@ use std::io::{Error, ErrorKind, Read};
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub struct Config {
     pub bind: String,
-    pub port: u16,
     pub group_name: String,
     pub sentinels: Option<Vec<String>>,
     #[serde(default = "ConfigLog::default")]

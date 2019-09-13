@@ -141,20 +141,16 @@ fn manage_subscription_message_type_subscribe(
 ///   |    +-> if data start send with old master, send error message to client
 ///   |
 /// End loop
-pub fn watch_sentinel(config: &Config, logger: &slog::Logger) -> Result<(), RedisError> {
+pub fn watch_sentinel(config: &Config, logger_server: &slog::Logger) -> Result<(), RedisError> {
     let sentinels_list = config.sentinels.as_ref().unwrap().clone();
 
     // TODO check if sentinel list is empty
 
-    let mut redis_box = RedisBoxConnector::new(sentinels_list, &config.group_name, logger)?;
-
-    // TODO create thread that bind and listen incomming connection.
-    // then set non blocking mode
-    // then add this connection to redis_boc
+    let mut redis_box = RedisBoxConnector::new(sentinels_list, &config.group_name, logger_server)?;
 
     loop {
         match redis_box.pool_data_from_sentinel() {
-            Ok(data) => manage_subscription_data(data, logger, &mut redis_box)?,
+            Ok(data) => manage_subscription_data(data, logger_server, &mut redis_box)?,
             Err(e) => manage_redis_subscription_error(e)?,
         };
 
