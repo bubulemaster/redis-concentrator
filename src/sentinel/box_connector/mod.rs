@@ -2,7 +2,7 @@
 //!
 use crate::lib::redis::stream::network::NetworkStream;
 use crate::lib::redis::subscription::RedisSubscription;
-use crate::lib::redis::types::{RedisError, RedisValue};
+use crate::lib::redis::types::{ErrorKind, RedisError, RedisValue};
 use crate::lib::redis::RedisConnector;
 use std::net::TcpStream;
 
@@ -48,6 +48,21 @@ fn create_master_connection(address: &str) -> Result<TcpStream, RedisError> {
     Ok(tcp_stream)
 }
 
+/// Create redis_subscription to switch master.
+fn create_redis_subscription_switch_master(
+    redis_sentinel_addr: &str,
+) -> Result<RedisSubscription, RedisError> {
+    // Create new sentinel connection for subscribe.
+    let sentinel_stream = create_redis_connection(redis_sentinel_addr)?;
+    // Subscribe to Sentinel to notify when master change
+    let mut sentinel_subscription =
+        RedisSubscription::new(Box::new(sentinel_stream), String::from("+switch-master"));
+
+    sentinel_subscription.subscribe()?;
+
+    Ok(sentinel_subscription)
+}
+
 /// Redis callback.
 pub trait RedisBoxConnectorCallback {
     /// Call when change master address.
@@ -71,8 +86,10 @@ pub struct RedisBoxConnector<'a> {
     sentinel_subscription: RedisSubscription,
     /// Redis group name.
     group_name: String,
-    /// Current Redis master.
-    redis_master_addr: String,
+    /// List of sentinel.
+    sentinel_list: Vec<String>, // TODO don't remove in list but create struct with last try
+    /// Current sentinel address.
+    redis_sentinel_addr: String,
 }
 
 impl<'a> RedisBoxConnectorCallback for RedisBoxConnector<'a> {
@@ -98,7 +115,7 @@ impl<'a> RedisBoxConnectorCallback for RedisBoxConnector<'a> {
             group_name
         );
 
-        info!(
+        warn!(
             self.logger,
             "Switch to new master {}:{}", new_master_ip, new_master_port
         );
@@ -112,11 +129,13 @@ impl<'a> RedisBoxConnectorCallback for RedisBoxConnector<'a> {
 
 impl<'a> RedisBoxConnector<'a> {
     pub fn new(
-        redis_sentinel_addr: &'a str,
+        mut sentinel_list: Vec<String>,
         group_name: &'a str,
         logger: &'a slog::Logger,
     ) -> Result<RedisBoxConnector<'a>, RedisError> {
-        let sentinel_stream = create_redis_connection(redis_sentinel_addr)?;
+        let redis_sentinel_addr = sentinel_list.remove(0);
+
+        let sentinel_stream = create_redis_connection(&redis_sentinel_addr)?;
         let mut sentinel_connector = RedisConnector::new(Box::new(sentinel_stream));
 
         let redis_master_addr = sentinel_connector.get_master_addr(group_name)?;
@@ -128,25 +147,64 @@ impl<'a> RedisBoxConnector<'a> {
 
         let master_stream = create_master_connection(&redis_master_addr)?;
 
-        // Create new sentinel connection for subscribe.
-        let sentinel_stream = create_redis_connection(redis_sentinel_addr)?;
-        // Subscribe to Sentinel to notify when master change
-        let mut sentinel_subscription =
-            RedisSubscription::new(Box::new(sentinel_stream), String::from("+switch-master"));
-
-        sentinel_subscription.subscribe()?;
+        let sentinel_subscription = create_redis_subscription_switch_master(&redis_sentinel_addr)?;
 
         Ok(RedisBoxConnector {
             logger,
             master_stream,
             sentinel_subscription,
             group_name: String::from(group_name),
-            redis_master_addr,
+            sentinel_list,
+            redis_sentinel_addr,
         })
     }
 
+    /// Reconnect to next sentinel.
+    fn reconnect_to_next_sentinel(&mut self) -> Result<(), RedisError> {
+        if self.sentinel_list.len() == 0 {
+            return Err(RedisError::from_message("No more sentinel available!"));
+        }
+
+        warn!(
+            self.logger,
+            "Lost connection with sentinel {}!", &self.redis_sentinel_addr
+        );
+
+        // Connect to another sentinel
+        self.redis_sentinel_addr = self.sentinel_list.remove(0);
+
+        info!(
+            self.logger,
+            "Connect to new sentinel {}.", &self.redis_sentinel_addr
+        );
+
+        self.sentinel_subscription =
+            create_redis_subscription_switch_master(&self.redis_sentinel_addr)?;
+
+        Ok(())
+    }
+
+    /// Pool data only from sentinel and reconnect to another sentinel if connection lost.
+    pub fn pool_data_from_sentinel(&mut self) -> Result<RedisValue, RedisError> {
+        match self.sentinel_subscription.pool() {
+            Ok(value) => Ok(value),
+            Err(e) => match e.kind() {
+                ErrorKind::IoError => match e.io_error_kind().unwrap() {
+                    std::io::ErrorKind::BrokenPipe => {
+                        self.reconnect_to_next_sentinel()?;
+
+                        Err(RedisError::from_no_data())
+                    }
+                    _ => Err(e),
+                },
+                _ => Err(e),
+            },
+        }
+    }
+
     /// Pool data.
-    pub fn pool(&mut self) -> Result<RedisValue, RedisError> {
-        self.sentinel_subscription.pool()
+    pub fn pool_data_from_redis_client_and_server(&mut self) -> Result<(), RedisError> {
+        // TODO
+        Ok(())
     }
 }

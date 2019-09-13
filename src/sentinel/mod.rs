@@ -68,6 +68,10 @@ fn manage_subscription_message_type_message(
     logger: &slog::Logger,
     callback: &mut dyn RedisBoxConnectorCallback,
 ) -> Result<(), RedisError> {
+    if channel != "+switch-master" {
+        return Ok(());
+    }
+
     /*
     1) "message"
     2) "+switch-master"
@@ -138,17 +142,24 @@ fn manage_subscription_message_type_subscribe(
 ///   |
 /// End loop
 pub fn watch_sentinel(config: &Config, logger: &slog::Logger) -> Result<(), RedisError> {
-    let sentinels_list = config.sentinels.as_ref().unwrap();
+    let sentinels_list = config.sentinels.as_ref().unwrap().clone();
 
     // TODO check if sentinel list is empty
-    let redis_sentinel_addr = sentinels_list.get(0).unwrap();
 
-    let mut redis_box = RedisBoxConnector::new(redis_sentinel_addr, &config.group_name, logger)?;
+    let mut redis_box = RedisBoxConnector::new(sentinels_list, &config.group_name, logger)?;
+
+    // TODO create thread that bind and listen incomming connection.
+    // then set non blocking mode
+    // then add this connection to redis_boc
 
     loop {
-        match redis_box.pool() {
+        match redis_box.pool_data_from_sentinel() {
             Ok(data) => manage_subscription_data(data, logger, &mut redis_box)?,
             Err(e) => manage_redis_subscription_error(e)?,
         };
+
+        if let Err(e) = redis_box.pool_data_from_redis_client_and_server() {
+            // TODO manage error
+        }
     }
 }

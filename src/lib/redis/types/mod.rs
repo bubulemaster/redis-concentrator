@@ -95,9 +95,17 @@ impl RedisError {
         }
     }
 
-    #[allow(dead_code)]
+    /// Return kind of error.
     pub fn kind(&self) -> ErrorKind {
         self.kind.clone()
+    }
+
+    /// Return kind of std::io::Error.
+    pub fn io_error_kind(&self) -> Option<std::io::ErrorKind> {
+        match self.io_error.as_ref() {
+            Some(e) => Some(e.kind().clone()),
+            None => None
+        }
     }
 }
 
