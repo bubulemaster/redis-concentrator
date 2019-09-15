@@ -17,6 +17,7 @@ use crate::client::watch_client;
 use crate::config::{get_config, Config};
 use crate::logging::create_log;
 use crate::sentinel::{watch_sentinel, MasterChangeNotification};
+use std::net::{SocketAddr, TcpStream};
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
 
@@ -108,8 +109,14 @@ fn main() {
             Receiver<MasterChangeNotification>,
         ) = mpsc::channel();
 
+        // Channel to notify when new client
+        let (tx_new_client, rx_new_client): (
+            Sender<(TcpStream, SocketAddr)>,
+            Receiver<(TcpStream, SocketAddr)>,
+        ) = mpsc::channel();
+
         // TODO create channel to allow communicate between client connection and sentinel watcher
-        if let Err(e) = watch_client(&config, logger_client) {
+        if let Err(e) = watch_client(&config, logger_client, tx_new_client) {
             error!(logger_main, "Error from listen client : {:?}", e);
         }
 
@@ -118,8 +125,21 @@ fn main() {
         }
 
         loop {
-            let msg = rx_master_change.recv().unwrap(); // TODO throw error if watch sentinel exit
-            println!("Master change: {:?}", msg)
+            let msg_master_change = rx_master_change.try_recv();
+
+            // TODO check error to see if thread is dead.
+            if let Ok(msg) = msg_master_change {
+                debug!(logger_redis_master, "Master change: {:?}", msg)
+            }
+
+            let msg_new_client = rx_new_client.try_recv();
+
+            // TODO check error to see if thread is dead.
+            if let Ok(msg) = msg_new_client {
+                //let (client_stream, client_addr) =
+                debug!(logger_redis_master, "New client: {:?}", msg)
+            }
+
             // TODO copy data from client to sentinel
         }
     } else {
