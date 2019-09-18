@@ -1,11 +1,10 @@
 //! This module contains routine to watch sentinels.
 //!
 use crate::config::Config;
-use crate::lib::redis::stream::network::NetworkStream;
 use crate::lib::redis::subscription::RedisSubscription;
 use crate::lib::redis::types::{ErrorKind, RedisError, RedisValue};
 use crate::lib::redis::{convert_to_string, RedisConnector};
-use std::net::TcpStream;
+use crate::node::create_redis_connection;
 use std::sync::mpsc::Sender;
 use std::thread;
 
@@ -18,48 +17,6 @@ pub struct MasterChangeNotification {
     pub old: String,
     /// Name of redis group.
     pub group_name: String,
-}
-
-/// Create a redis connector to sentinel.
-fn create_redis_connection(address: &str) -> Result<NetworkStream, RedisError> {
-    let tcp_stream = match TcpStream::connect(address) {
-        Ok(s) => s,
-        Err(e) => return Err(RedisError::from_io_error(e)),
-    };
-
-    // TODO allow to set value cause WouldBlock use it.
-    let timeout = std::time::Duration::from_millis(200);
-
-    if let Err(e) = tcp_stream.set_read_timeout(Some(timeout)) {
-        return Err(RedisError::from_io_error(e));
-    }
-
-    if let Err(e) = tcp_stream.set_nonblocking(false) {
-        return Err(RedisError::from_io_error(e));
-    }
-
-    Ok(NetworkStream::new(tcp_stream))
-}
-
-/// Create a raw tcp connection.
-fn create_master_connection(address: &str) -> Result<TcpStream, RedisError> {
-    let tcp_stream = match TcpStream::connect(address) {
-        Ok(s) => s,
-        Err(e) => return Err(RedisError::from_io_error(e)),
-    };
-
-    // TODO allow to set value cause WouldBlock use it.
-    let timeout = std::time::Duration::from_millis(200);
-
-    if let Err(e) = tcp_stream.set_read_timeout(Some(timeout)) {
-        return Err(RedisError::from_io_error(e));
-    }
-
-    if let Err(e) = tcp_stream.set_nonblocking(false) {
-        return Err(RedisError::from_io_error(e));
-    }
-
-    Ok(tcp_stream)
 }
 
 /// Create redis_subscription to switch master.
@@ -160,23 +117,24 @@ fn manage_subscription_message_type_message(
     let new_master_ip = *vec.get(3).unwrap();
     let new_master_port = *vec.get(4).unwrap();
 
-    let msg = MasterChangeNotification {
-        new: format!(
-            "{}:{}",
-            String::from(new_master_ip),
-            String::from(new_master_port)
-        ),
-        old: format!(
-            "{}:{}",
-            String::from(old_master_ip),
-            String::from(old_master_port)
-        ),
-        group_name: String::from(group_name),
-    };
+    let new_master_addr = format!(
+        "{}:{}",
+        String::from(new_master_ip),
+        String::from(new_master_port)
+    );
+    let old_master_addr = format!(
+        "{}:{}",
+        String::from(old_master_ip),
+        String::from(old_master_port)
+    );
 
-    tx_master_change.send(msg).unwrap();
-
-    Ok(())
+    send_notification(
+        &new_master_addr,
+        &old_master_addr,
+        group_name,
+        logger,
+        tx_master_change,
+    )
 }
 
 /// When receive a message type subscribe from subscription.
@@ -205,6 +163,26 @@ fn manage_subscription_message_type_subscribe(
     Ok(())
 }
 
+/// Create notification of master change.
+fn send_notification(
+    new_redis_master_addr: &str,
+    old_redis_master_addr: &str,
+    group_name: &str,
+    logger: &slog::Logger,
+    tx_master_change: &Sender<MasterChangeNotification>,
+) -> Result<(), RedisError> {
+    let msg = MasterChangeNotification {
+        new: String::from(new_redis_master_addr),
+        old: String::from(old_redis_master_addr),
+        group_name: String::from(group_name),
+    };
+
+    // TODO check if master role
+
+    tx_master_change.send(msg).unwrap();
+
+    Ok(())
+}
 /// Main loop to watch sentinel.
 fn watch_sentinel_loop(
     logger: slog::Logger,
@@ -212,15 +190,25 @@ fn watch_sentinel_loop(
     sentinels_list: Vec<String>,
     group_name: String,
 ) -> Result<(), RedisError> {
+    let mut redis_master_addr = String::new();
+
     // Iterate on sentinel list in case of lost sentinel
     'main_loop: for redis_sentinel_addr in sentinels_list {
         let sentinel_stream = create_redis_connection(&redis_sentinel_addr)?;
 
         let mut sentinel_connector = RedisConnector::new(Box::new(sentinel_stream));
-        let _redis_master_addr = sentinel_connector.get_master_addr(&group_name)?;
-        // Check if master role
+        let new_redis_master_addr = sentinel_connector.get_master_addr(&group_name)?;
 
-        // TODO If master change, send notification
+        // If master change, create notification.
+        if new_redis_master_addr != redis_master_addr {
+            send_notification(
+                &new_redis_master_addr,
+                &redis_master_addr,
+                &group_name,
+                &logger,
+                &tx_master_change,
+            )?;
+        }
 
         info!(logger, "Connect to new sentinel {}.", &redis_sentinel_addr);
 

@@ -9,11 +9,12 @@ mod client;
 mod config;
 mod lib;
 mod logging;
+mod node;
 mod sentinel;
 
 use std::env;
 
-use crate::client::watch_client;
+use crate::client::{copy_data_from_client_to_redis, watch_client};
 use crate::config::{get_config, Config};
 use crate::logging::create_log;
 use crate::sentinel::{watch_sentinel, MasterChangeNotification};
@@ -93,6 +94,7 @@ fn main() {
     };
 
     // Set log
+    // TODO share same logger cause override log.
     let logger_client = build_log(&config);
     let logger_redis_sentinel = build_log(&config);
     let logger_redis_master = build_log(&config);
@@ -115,32 +117,35 @@ fn main() {
             Receiver<(TcpStream, SocketAddr)>,
         ) = mpsc::channel();
 
-        // TODO create channel to allow communicate between client connection and sentinel watcher
-        if let Err(e) = watch_client(&config, logger_client, tx_new_client) {
-            error!(logger_main, "Error from listen client : {:?}", e);
-        }
-
         if let Err(e) = watch_sentinel(&config, logger_redis_sentinel, tx_master_change) {
-            error!(logger_main, "Error when running : {:?}", e);
+            error!(logger_main, "Error when running: {:?}", e);
         }
 
-        loop {
-            let msg_master_change = rx_master_change.try_recv();
+        // Wait master addr.
+        match rx_master_change.recv() {
+            Ok(data) => {
+                debug!(logger_main, "Receive first master change notification");
 
-            // TODO check error to see if thread is dead.
-            if let Ok(msg) = msg_master_change {
-                debug!(logger_redis_master, "Master change: {:?}", msg)
+                if let Err(e) = watch_client(&config, logger_client, tx_new_client) {
+                    error!(logger_main, "Error from listen client: {:?}", e);
+                }
+
+                if let Err(e) = copy_data_from_client_to_redis(
+                    &data.new,
+                    logger_redis_master,
+                    rx_master_change,
+                    rx_new_client,
+                ) {
+                    error!(logger_main, "Error when copy data: {:?}", e);
+                }
             }
-
-            let msg_new_client = rx_new_client.try_recv();
-
-            // TODO check error to see if thread is dead.
-            if let Ok(msg) = msg_new_client {
-                //let (client_stream, client_addr) =
-                debug!(logger_redis_master, "New client: {:?}", msg)
+            Err(e) => {
+                error!(
+                    logger_main,
+                    "Cannot create first connection to Redis Master: {:?}", e
+                );
+                std::process::exit(-1);
             }
-
-            // TODO copy data from client to sentinel
         }
     } else {
         error!(logger_main, "No sentinels found in config file");
