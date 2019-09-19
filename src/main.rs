@@ -21,6 +21,7 @@ use crate::sentinel::{watch_sentinel, MasterChangeNotification};
 use std::net::{SocketAddr, TcpStream};
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
+use std::sync::Arc;
 
 const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
 
@@ -66,7 +67,7 @@ fn run_watch(
     logger_client: slog::Logger,
     logger_redis_sentinel: slog::Logger,
     logger_redis_master: slog::Logger,
-    logger_main: &slog::Logger,
+    logger_main: slog::Logger,
 ) -> Result<(), String> {
     // Channel to notify when master change
     let (tx_master_change, rx_master_change): (
@@ -136,11 +137,7 @@ fn main() {
     };
 
     // Set log
-    // TODO When use terminal, log line override
     let logger_main = build_log(&config);
-    let logger_client = build_log(&config);
-    let logger_redis_sentinel = build_log(&config);
-    let logger_redis_master = build_log(&config);
 
     if config.log.logo {
         logo(&logger_main);
@@ -149,10 +146,10 @@ fn main() {
     if config.sentinels.is_some() {
         if let Err(e) = run_watch(
             &config,
-            logger_client,
-            logger_redis_sentinel,
-            logger_redis_master,
-            &logger_main,
+            logger_main.clone(),
+            logger_main.clone(),
+            logger_main.clone(),
+            logger_main.clone(),
         ) {
             error!(logger_main, "{}", e);
             std::process::exit(-1);
