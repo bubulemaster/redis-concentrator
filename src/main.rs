@@ -16,7 +16,7 @@ use std::env;
 
 use crate::client::{copy_data_from_client_to_redis, watch_client};
 use crate::config::{get_config, Config};
-use crate::logging::create_log;
+use crate::logging::build_log;
 use crate::sentinel::{watch_sentinel, MasterChangeNotification};
 use std::net::{SocketAddr, TcpStream};
 use std::sync::mpsc;
@@ -58,17 +58,6 @@ fn logo(logger: &slog::Logger) {
         r"\_| \_\___|\__,_|  \____/\___/|_| |_|\___\___|_| |_|\__|_|  \__,_|\__\___/|_|   "
     );
     info!(logger, "");
-}
-
-/// Create logger.
-fn build_log(config: &Config) -> slog::Logger {
-    match create_log(&config) {
-        Some(l) => l,
-        None => {
-            eprintln!("Error: cannot create log!");
-            std::process::exit(-1);
-        }
-    }
 }
 
 /// Run watch sentinel, client.
@@ -147,13 +136,14 @@ fn main() {
     };
 
     // Set log
+    // TODO When use terminal, log line override
+    let logger_main = build_log(&config);
     let logger_client = build_log(&config);
     let logger_redis_sentinel = build_log(&config);
     let logger_redis_master = build_log(&config);
-    let logger_main = build_log(&config);
 
     if config.log.logo {
-        logo(&logger_redis_master);
+        logo(&logger_main);
     }
 
     if config.sentinels.is_some() {
