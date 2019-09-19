@@ -2,12 +2,12 @@
 //!
 extern crate slog_scope;
 extern crate slog_stdlog;
-extern crate slog_term;
 extern crate slog_syslog;
+extern crate slog_term;
 
-use std::fs::OpenOptions;
-use slog::{Drain, Level, Fuse};
+use slog::{Drain, Fuse, Level};
 use slog_syslog::Facility;
+use std::fs::OpenOptions;
 
 use crate::config::Config;
 
@@ -28,11 +28,10 @@ pub fn create_log(config: &Config) -> Option<slog::Logger> {
 
     match config.log.log_type.as_str() {
         "console" => Some(create_console_log(log_level)),
-        "file" =>
-            match &config.log.file {
-                Some(s) => Some(create_file_log(s.to_string(), log_level)),
-                None => None
-            },
+        "file" => match &config.log.file {
+            Some(s) => Some(create_file_log(s.to_string(), log_level)),
+            None => None,
+        },
         "syslog" => Some(create_syslog_log(log_level)),
         e => {
             println!("Log type '{}' not supported!", e);
@@ -41,7 +40,7 @@ pub fn create_log(config: &Config) -> Option<slog::Logger> {
     }
 }
 
-fn create_file_log(filename: String, log_level: Level) -> slog::Logger  {
+fn create_file_log(filename: String, log_level: Level) -> slog::Logger {
     let file = OpenOptions::new()
         .create(true)
         .write(true)
@@ -58,10 +57,10 @@ fn create_file_log(filename: String, log_level: Level) -> slog::Logger  {
 }
 
 fn create_console_log(log_level: Level) -> slog::Logger {
-    let decorator = slog_term::PlainDecorator::new(std::io::stdout());
+    let decorator = slog_term::TermDecorator::new().build();
     let drain = slog_term::CompactFormat::new(decorator).build().fuse();
-    let drain = slog_async::Async::new(drain).build().fuse();
     let drain = slog::LevelFilter::new(drain, log_level).map(Fuse);
+    let drain = slog_async::Async::new(drain).build().fuse();
 
     slog::Logger::root(drain, o!())
 }
