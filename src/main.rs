@@ -107,7 +107,7 @@ fn run_watch(
             return Err(format!(
                 "Cannot create first connection to Redis Master: {:?}",
                 e
-            ))
+            ));
         }
     }
 
@@ -152,6 +152,7 @@ fn main() {
             logger_main.clone(),
         ) {
             error!(logger_main, "{}", e);
+            eprintln!("{}", e);
             std::process::exit(-1);
         }
     } else {

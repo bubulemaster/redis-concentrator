@@ -4,7 +4,7 @@ use crate::config::Config;
 use crate::lib::redis::subscription::RedisSubscription;
 use crate::lib::redis::types::{ErrorKind, RedisError, RedisValue};
 use crate::lib::redis::{convert_to_string, RedisConnector};
-use crate::node::create_redis_connection;
+use crate::node::{create_redis_stream_connection, create_redis_stream_connection_blocking};
 use std::sync::mpsc::Sender;
 use std::thread;
 
@@ -24,7 +24,7 @@ fn create_redis_subscription_switch_master(
     redis_sentinel_addr: &str,
 ) -> Result<RedisSubscription, RedisError> {
     // Create new sentinel connection for subscribe.
-    let sentinel_stream = create_redis_connection(redis_sentinel_addr)?;
+    let sentinel_stream = create_redis_stream_connection(redis_sentinel_addr)?;
     // Subscribe to Sentinel to notify when master change
     let mut sentinel_subscription =
         RedisSubscription::new(Box::new(sentinel_stream), String::from("+switch-master"));
@@ -194,8 +194,7 @@ fn watch_sentinel_loop(
 
     // Iterate on sentinel list in case of lost sentinel
     'main_loop: for redis_sentinel_addr in sentinels_list {
-        let sentinel_stream = create_redis_connection(&redis_sentinel_addr)?;
-
+        let sentinel_stream = create_redis_stream_connection_blocking(&redis_sentinel_addr)?;
         let mut sentinel_connector = RedisConnector::new(Box::new(sentinel_stream));
         let new_redis_master_addr = sentinel_connector.get_master_addr(&group_name)?;
 
