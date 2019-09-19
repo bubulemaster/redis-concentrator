@@ -71,6 +71,59 @@ fn build_log(config: &Config) -> slog::Logger {
     }
 }
 
+/// Run watch sentinel, client.
+fn run_watch(
+    config: &Config,
+    logger_client: slog::Logger,
+    logger_redis_sentinel: slog::Logger,
+    logger_redis_master: slog::Logger,
+    logger_main: &slog::Logger,
+) -> Result<(), String> {
+    // Channel to notify when master change
+    let (tx_master_change, rx_master_change): (
+        Sender<MasterChangeNotification>,
+        Receiver<MasterChangeNotification>,
+    ) = mpsc::channel();
+
+    // Channel to notify when new client
+    let (tx_new_client, rx_new_client): (
+        Sender<(TcpStream, SocketAddr)>,
+        Receiver<(TcpStream, SocketAddr)>,
+    ) = mpsc::channel();
+
+    if let Err(e) = watch_sentinel(&config, logger_redis_sentinel, tx_master_change) {
+        return Err(format!("Error when running: {:?}", e));
+    }
+
+    // Wait master addr.
+    match rx_master_change.recv() {
+        Ok(data) => {
+            debug!(logger_main, "Receive first master change notification");
+
+            if let Err(e) = watch_client(&config, logger_client, tx_new_client) {
+                return Err(format!("Error from listen client: {:?}", e));
+            }
+
+            if let Err(e) = copy_data_from_client_to_redis(
+                &data.new,
+                logger_redis_master,
+                rx_master_change,
+                rx_new_client,
+            ) {
+                return Err(format!("Error when copy data: {:?}", e));
+            }
+        }
+        Err(e) => {
+            return Err(format!(
+                "Cannot create first connection to Redis Master: {:?}",
+                e
+            ))
+        }
+    }
+
+    Ok(())
+}
+
 // TODO return error value
 fn main() {
     // Get command line options
@@ -94,7 +147,6 @@ fn main() {
     };
 
     // Set log
-    // TODO share same logger cause override log.
     let logger_client = build_log(&config);
     let logger_redis_sentinel = build_log(&config);
     let logger_redis_master = build_log(&config);
@@ -105,47 +157,15 @@ fn main() {
     }
 
     if config.sentinels.is_some() {
-        // Channel to notify when master change
-        let (tx_master_change, rx_master_change): (
-            Sender<MasterChangeNotification>,
-            Receiver<MasterChangeNotification>,
-        ) = mpsc::channel();
-
-        // Channel to notify when new client
-        let (tx_new_client, rx_new_client): (
-            Sender<(TcpStream, SocketAddr)>,
-            Receiver<(TcpStream, SocketAddr)>,
-        ) = mpsc::channel();
-
-        if let Err(e) = watch_sentinel(&config, logger_redis_sentinel, tx_master_change) {
-            error!(logger_main, "Error when running: {:?}", e);
-        }
-
-        // Wait master addr.
-        match rx_master_change.recv() {
-            Ok(data) => {
-                debug!(logger_main, "Receive first master change notification");
-
-                if let Err(e) = watch_client(&config, logger_client, tx_new_client) {
-                    error!(logger_main, "Error from listen client: {:?}", e);
-                }
-
-                if let Err(e) = copy_data_from_client_to_redis(
-                    &data.new,
-                    logger_redis_master,
-                    rx_master_change,
-                    rx_new_client,
-                ) {
-                    error!(logger_main, "Error when copy data: {:?}", e);
-                }
-            }
-            Err(e) => {
-                error!(
-                    logger_main,
-                    "Cannot create first connection to Redis Master: {:?}", e
-                );
-                std::process::exit(-1);
-            }
+        if let Err(e) = run_watch(
+            &config,
+            logger_client,
+            logger_redis_sentinel,
+            logger_redis_master,
+            &logger_main,
+        ) {
+            error!(logger_main, "{}", e);
+            std::process::exit(-1);
         }
     } else {
         error!(logger_main, "No sentinels found in config file");

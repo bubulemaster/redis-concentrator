@@ -168,7 +168,7 @@ fn send_notification(
     new_redis_master_addr: &str,
     old_redis_master_addr: &str,
     group_name: &str,
-    logger: &slog::Logger,
+    _logger: &slog::Logger,
     tx_master_change: &Sender<MasterChangeNotification>,
 ) -> Result<(), RedisError> {
     let msg = MasterChangeNotification {
@@ -208,6 +208,8 @@ fn watch_sentinel_loop(
                 &logger,
                 &tx_master_change,
             )?;
+
+            redis_master_addr = new_redis_master_addr;
         }
 
         info!(logger, "Connect to new sentinel {}.", &redis_sentinel_addr);
