@@ -130,7 +130,7 @@ impl RedisStream for NetworkStream {
         // That why, we clone the new buf that is what we want return.
         let ret_buf = self.buf.clone();
 
-        // Clear ou buffer stream.
+        // Clear our buffer stream.
         self.buf.clear();
 
         // And add data.

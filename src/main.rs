@@ -21,7 +21,6 @@ use crate::sentinel::{watch_sentinel, MasterChangeNotification};
 use std::net::{SocketAddr, TcpStream};
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
-use std::sync::Arc;
 
 const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
 
