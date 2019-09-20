@@ -82,6 +82,7 @@ pub fn copy_data_from_client_to_redis(
     let mut client_map = HashMap::new();
     let mut redis_master_addr = String::from(redis_master_addr);
 
+    // TODO allow configuration
     let sleep_duration = time::Duration::from_millis(200);
 
     loop {
@@ -167,6 +168,7 @@ fn manage_client_data(
     }
 
     for key in remove_connection {
+        debug!(logger, "Close connection {}", &key);
         client_map.remove(&key).unwrap();
     }
 }
