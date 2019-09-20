@@ -1,9 +1,9 @@
 [package]
-name = "redis-concentrator"
+name = "red-stream-lollipop"
 version = "0.0.1"
 authors = ["Emeric MARTINEAU"]
 edition = "2018"
-description = "Redis Concentrator is tool to easly connect your application to Redis without know his infrastructure."
+description = "Red Stream Lollipop is tool to easly connect your application to Redis without know his infrastructure."
 repository = "..."
 readme = "README.md"
 keywords = ["redis", "sentinel", "cluster"]
@@ -23,3 +23,14 @@ slog-term = "2.4.1"
 slog-async = "2.3.0"
 slog-syslog = "0.12.0"
 log = "0.4.8"
+
+[profile.release]
+opt-level = 3
+debug = false
+rpath = false
+lto = false
+debug-assertions = false
+codegen-units = 16
+panic = 'abort'
+incremental = false
+overflow-checks = false

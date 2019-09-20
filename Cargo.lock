@@ -343,7 +343,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "redis-concentrator"
+name = "red-stream-lollipop"
 version = "0.0.1"
 dependencies = [
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
