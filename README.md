@@ -61,6 +61,15 @@ db0:keys=1,expires=0,avg_ttl=0
 
 See [redis-concentrator-config.yaml.sample](./redis-concentrator-config.yaml.sample) for more options.
 
+### How it's works.
+**Red Stream Lollipop** has one process and two threads.
+
+First thread wait client connection.
+
+Second thread connect to Redis sentinel to know if master change.
+
+The main process copy data from/to client to/from Redis master.
+
 ---
 ## Contributing
 
