@@ -28,7 +28,13 @@ fn create_redis_stream_param(address: &str, blocking: bool) -> Result<NetworkStr
         return Err(RedisError::from_io_error(e));
     }
 
-    if let Err(e) = tcp_stream.set_nonblocking(blocking) {
+    if !blocking {
+        if let Err(e) = tcp_stream.set_nonblocking(blocking) {
+            return Err(RedisError::from_io_error(e));
+        }
+    }
+
+    if let Err(e) = tcp_stream.set_nodelay(true) {
         return Err(RedisError::from_io_error(e));
     }
 
