@@ -8,7 +8,11 @@ use crate::lib::redis::types::REDIS_TYPE_ERROR;
 use crate::lib::redis::types::REDIS_TYPE_INTEGER;
 use crate::lib::redis::types::{RedisError, RedisValue, REDIS_TYPE_STRING};
 
+#[cfg(test)]
+pub mod tests;
+
 /// Redis type get from redis.
+#[derive(Debug, PartialEq)]
 enum RedisType {
     Integer,
     String,
@@ -69,7 +73,10 @@ fn read_array_size(stream: &mut Box<dyn RedisStream>) -> Result<isize, RedisErro
 
     match size.parse::<isize>() {
         Ok(i) => Ok(i),
-        Err(e) => Err(RedisError::from_message(&format!("Invalid integer: {}", e))),
+        Err(e) => Err(RedisError::from_message(&format!(
+            "Invalid integer: {} in '{}'",
+            e, size
+        ))),
     }
 }
 
@@ -81,7 +88,7 @@ fn what_is(data: &[u8]) -> String {
         REDIS_TYPE_ARRAY => String::from("Array"),
         REDIS_TYPE_ERROR => String::from("Error"),
         REDIS_TYPE_INTEGER => String::from("Integer"),
-        e => format!("Unknow '{}'", e),
+        e => format!("Unknow '0x{}'", e),
     }
 }
 
@@ -122,7 +129,10 @@ fn read_integer_from_stream(stream: &mut Box<dyn RedisStream>) -> Result<isize, 
 
     match size.parse::<isize>() {
         Ok(i) => Ok(i),
-        Err(e) => Err(RedisError::from_message(&format!("Invalid integer: {}", e))),
+        Err(e) => Err(RedisError::from_message(&format!(
+            "Invalid integer: {} in '{}'",
+            e, size
+        ))),
     }
 }
 
@@ -135,7 +145,12 @@ fn read_bulk_string_from_stream(
 
     let size = match size.parse::<isize>() {
         Ok(i) => i,
-        Err(e) => return Err(RedisError::from_message(&format!("Invalid integer: {}", e))),
+        Err(e) => {
+            return Err(RedisError::from_message(&format!(
+                "Invalid integer: {} in '{}'",
+                e, size
+            )))
+        }
     };
 
     // Null string
@@ -203,7 +218,6 @@ fn read_array_from_stream(
 
 /// Read strict string, not bulk string.
 /// Must contain '\r\n' at end (but not include in result).
-#[allow(dead_code)]
 pub fn read_strict_string(stream: &mut Box<dyn RedisStream>) -> Result<String, RedisError> {
     let header = check_error(stream)?;
 
@@ -218,7 +232,6 @@ pub fn read_strict_string(stream: &mut Box<dyn RedisStream>) -> Result<String, R
 }
 
 /// Read integer value.
-#[allow(dead_code)]
 pub fn read_integer(stream: &mut Box<dyn RedisStream>) -> Result<isize, RedisError> {
     let header = check_error(stream)?;
 
@@ -242,7 +255,7 @@ pub fn read_bulk_string(stream: &mut Box<dyn RedisStream>) -> Result<Option<Vec<
     // First char must be '$'
     if header != REDIS_TYPE_BULK_STRING {
         return Err(RedisError::from_message(&format!(
-            "Not an bulk string but a {}",
+            "Not a bulk string but a {}",
             what_is(&[header])
         )));
     }

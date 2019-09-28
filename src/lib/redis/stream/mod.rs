@@ -1,5 +1,7 @@
 //! This module contain abstract type of stream.
 //!
+#[cfg(test)]
+pub mod tests;
 
 pub mod network;
 

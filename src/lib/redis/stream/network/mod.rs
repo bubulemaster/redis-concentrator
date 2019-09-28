@@ -15,7 +15,7 @@ pub struct NetworkStream {
     /// Network stream.
     stream: TcpStream,
     /// Internal buffer.
-    pub buf: Vec<u8>,
+    buf: Vec<u8>,
 }
 
 impl NetworkStream {
@@ -26,7 +26,7 @@ impl NetworkStream {
         }
     }
 
-    /// Read data from lib.redis.stream.network and update buffer size.
+    /// Read data from TcpStream and update buffer size.
     fn read(&mut self) -> std::io::Result<()> {
         let mut buf = [0; BUFFER_SIZE];
 

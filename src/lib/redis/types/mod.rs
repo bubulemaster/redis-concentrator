@@ -104,7 +104,15 @@ impl RedisError {
     pub fn io_error_kind(&self) -> Option<std::io::ErrorKind> {
         match self.io_error.as_ref() {
             Some(e) => Some(e.kind().clone()),
-            None => None
+            None => None,
+        }
+    }
+
+    /// Return message if set.
+    pub fn message(&self) -> String {
+        match self.message.as_ref() {
+            Some(s) => s.clone(),
+            None => String::new(),
         }
     }
 }
