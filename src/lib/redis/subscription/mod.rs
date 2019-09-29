@@ -1,5 +1,7 @@
 //! This module contain async subscription structure.
 //!
+#[cfg(test)]
+pub mod tests;
 
 use crate::lib::redis::parser::read_array;
 use crate::lib::redis::stream::RedisStream;
