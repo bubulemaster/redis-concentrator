@@ -1,5 +1,8 @@
-//! This module contains routine to watch sentinels.
+//! This module contains routine to watch clients.
 //!
+#[cfg(test)]
+pub mod tests;
+
 use crate::config::Config;
 use crate::lib::redis::stream::network::NetworkStream;
 use crate::lib::redis::stream::RedisStream;
