@@ -232,6 +232,7 @@ pub fn read_strict_string(stream: &mut Box<dyn RedisStream>) -> Result<String, R
 }
 
 /// Read integer value.
+#[allow(dead_code)]
 pub fn read_integer(stream: &mut Box<dyn RedisStream>) -> Result<isize, RedisError> {
     let header = check_error(stream)?;
 

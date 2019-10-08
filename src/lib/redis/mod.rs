@@ -104,6 +104,7 @@ pub fn convert_to_string(value: &RedisValue) -> Result<String, RedisError> {
 }
 
 /// Convert string or return error.
+#[allow(dead_code)]
 pub fn convert_to_integer(value: &RedisValue) -> Result<isize, RedisError> {
     match value {
         RedisValue::Integer(s) => Ok(s.clone()),

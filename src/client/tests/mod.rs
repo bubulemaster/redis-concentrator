@@ -1,8 +1,6 @@
-use crate::client::{copy_data_from_client_to_redis, manage_new_client_message};
+use crate::client::manage_new_client_message;
 use crate::config::{Config, ConfigLog};
-use crate::lib::redis::types::RedisError;
 use crate::logging::build_log;
-use crate::sentinel::MasterChangeNotification;
 use std::collections::HashMap;
 use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::sync::mpsc;
@@ -24,18 +22,13 @@ fn test_manage_new_client_message_ok() {
 
     let logger = build_log(&config);
 
-    let (tx_master_change, rx_master_change): (
-        Sender<MasterChangeNotification>,
-        Receiver<MasterChangeNotification>,
-    ) = mpsc::channel();
-
     let (tx_new_client, rx_new_client): (
         Sender<(TcpStream, SocketAddr)>,
         Receiver<(TcpStream, SocketAddr)>,
     ) = mpsc::channel();
 
     let mut client_map = HashMap::new();
-    let mut redis_master_addr = String::new();
+    let mut redis_master_addr;
 
     // Create fake Redis server
     let listener_redis_server = match TcpListener::bind("127.0.0.1:0") {
@@ -55,7 +48,7 @@ fn test_manage_new_client_message_ok() {
 
     let socket = client.local_addr().unwrap();
 
-    tx_new_client.send((client, socket));
+    tx_new_client.send((client, socket)).unwrap();
 
     manage_new_client_message(
         &logger,

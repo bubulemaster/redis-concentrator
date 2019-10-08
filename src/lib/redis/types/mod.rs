@@ -109,6 +109,7 @@ impl RedisError {
     }
 
     /// Return message if set.
+    #[allow(dead_code)]
     pub fn message(&self) -> String {
         match self.message.as_ref() {
             Some(s) => s.clone(),

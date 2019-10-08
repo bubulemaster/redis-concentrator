@@ -111,8 +111,6 @@ pub fn copy_data_from_client_to_redis(
 
         thread::sleep(sleep_duration);
     }
-
-    Ok(())
 }
 
 /// Manage data (copy) from/to client.
