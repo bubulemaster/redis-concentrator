@@ -1,9 +1,9 @@
 //! This module contains routine to watch sentinels.
 //!
 use crate::config::Config;
-use crate::lib::redis::subscription::RedisSubscription;
-use crate::lib::redis::types::{ErrorKind, RedisError, RedisValue};
-use crate::lib::redis::{convert_to_string, RedisConnector};
+use crate::redis::subscription::RedisSubscription;
+use crate::redis::types::{ErrorKind, RedisError, RedisValue};
+use crate::redis::{convert_to_string, RedisConnector};
 use crate::node::{create_redis_stream_connection, create_redis_stream_connection_blocking};
 use std::sync::mpsc::Sender;
 use std::thread;
@@ -193,10 +193,17 @@ fn watch_sentinel_loop(
     let mut redis_master_addr = String::new();
 
     // Iterate on sentinel list in case of lost sentinel
-    'main_loop: for redis_sentinel_addr in sentinels_list {
+    for redis_sentinel_addr in sentinels_list {
         let sentinel_stream = create_redis_stream_connection_blocking(&redis_sentinel_addr)?;
         let mut sentinel_connector = RedisConnector::new(Box::new(sentinel_stream));
-        let new_redis_master_addr = sentinel_connector.get_master_addr(&group_name)?;
+        let result_new_redis_master_addr = sentinel_connector.get_master_addr(&group_name);
+
+        if let Err(e) = result_new_redis_master_addr {
+            error!(logger, "Master group not found or network connection issue.");
+            return Err(e);
+        }
+
+        let new_redis_master_addr = result_new_redis_master_addr.unwrap();
 
         // If master change, create notification.
         if new_redis_master_addr != redis_master_addr {
@@ -262,7 +269,10 @@ pub fn watch_sentinel(
     let sentinels_list = config.sentinels.as_ref().unwrap().clone();
     let group_name = String::from(&config.group_name);
 
-    // TODO check if sentinel list is empty
+    if sentinels_list.len() == 0 {
+        error!(logger, "Sentinel list empty.");
+        return Err(RedisError::from_message("Sentinel list empty."));
+    }
 
     thread::spawn(move || {
         let status = watch_sentinel_loop(logger, tx_master_change, sentinels_list, group_name);

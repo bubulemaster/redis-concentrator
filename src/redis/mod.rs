@@ -5,9 +5,9 @@ pub mod stream;
 pub mod subscription;
 pub mod types;
 
-use crate::lib::redis::parser::{read_array, read_bulk_string, read_strict_string};
-use crate::lib::redis::stream::RedisStream;
-use crate::lib::redis::types::{RedisError, RedisValue};
+use crate::redis::parser::{read_array, read_bulk_string, read_strict_string};
+use crate::redis::stream::RedisStream;
+use crate::redis::types::{RedisError, RedisValue};
 
 pub struct RedisConnector {
     stream: Box<dyn RedisStream>,

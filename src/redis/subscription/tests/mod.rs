@@ -1,7 +1,7 @@
-use crate::lib::redis::stream::tests::TestRedisStream;
-use crate::lib::redis::stream::RedisStream;
-use crate::lib::redis::subscription::RedisSubscription;
-use crate::lib::redis::types::{
+use crate::redis::stream::tests::TestRedisStream;
+use crate::redis::stream::RedisStream;
+use crate::redis::subscription::RedisSubscription;
+use crate::redis::types::{
     RedisError, RedisValue, REDIS_TYPE_ARRAY, REDIS_TYPE_BULK_STRING, REDIS_TYPE_INTEGER,
 };
 

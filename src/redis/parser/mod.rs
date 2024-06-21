@@ -1,12 +1,12 @@
 //! This module contain parse basic routine.
 //!
 
-use crate::lib::redis::stream::RedisStream;
-use crate::lib::redis::types::REDIS_TYPE_ARRAY;
-use crate::lib::redis::types::REDIS_TYPE_BULK_STRING;
-use crate::lib::redis::types::REDIS_TYPE_ERROR;
-use crate::lib::redis::types::REDIS_TYPE_INTEGER;
-use crate::lib::redis::types::{RedisError, RedisValue, REDIS_TYPE_STRING};
+use crate::redis::stream::RedisStream;
+use crate::redis::types::REDIS_TYPE_ARRAY;
+use crate::redis::types::REDIS_TYPE_BULK_STRING;
+use crate::redis::types::REDIS_TYPE_ERROR;
+use crate::redis::types::REDIS_TYPE_INTEGER;
+use crate::redis::types::{RedisError, RedisValue, REDIS_TYPE_STRING};
 
 #[cfg(test)]
 pub mod tests;

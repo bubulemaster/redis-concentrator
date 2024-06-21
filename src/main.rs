@@ -7,7 +7,7 @@ extern crate slog;
 
 mod client;
 mod config;
-mod lib;
+mod redis;
 mod logging;
 mod node;
 mod sentinel;
@@ -33,14 +33,12 @@ fn help() {
 
 fn logo(logger: &slog::Logger) {
     // Thanks to http://patorjk.com/software/taag/#p=display&f=Doom&t=Red%20Concentrator
-    info!(logger, r"______         _   _____ _                              _           _ _ _                   ");
-    info!(logger, r"| ___ \       | | /  ___| |                            | |         | | (_)                  ");
-    info!(logger, r"| |_/ /___  __| | \ `--.| |_ _ __ ___  __ _ _ __ ___   | |     ___ | | |_ _ __   ___  _ __  ");
-    info!(logger, r"|    // _ \/ _` |  `--. \ __| '__/ _ \/ _` | '_ ` _ \  | |    / _ \| | | | '_ \ / _ \| '_ \ ");
-    info!(logger, r"| |\ \  __/ (_| | /\__/ / |_| | |  __/ (_| | | | | | | | |___| (_) | | | | |_) | (_) | |_) |");
-    info!(logger, r"\_| \_\___|\__,_| \____/ \__|_|  \___|\__,_|_| |_| |_| \_____/\___/|_|_|_| .__/ \___/| .__/ ");
-    info!(logger, r"                                                                         | |         | |    ");
-    info!(logger, r"                                                                         |_|         |_|    ");
+    info!(logger, r"______         _   _____                            _             _             ");
+    info!(logger, r"| ___ \       | | /  __ \                          | |           | |            ");
+    info!(logger, r"| |_/ /___  __| | | /  \/ ___  _ __   ___ ___ _ __ | |_ _ __ __ _| |_ ___  _ __ ");
+    info!(logger, r"|    // _ \/ _` | | |    / _ \| '_ \ / __/ _ \ '_ \| __| '__/ _` | __/ _ \| '__|");
+    info!(logger, r"| |\ \  __/ (_| | | \__/\ (_) | | | | (_|  __/ | | | |_| | | (_| | || (_) | |   ");
+    info!(logger, r"\_| \_\___|\__,_|  \____/\___/|_| |_|\___\___|_| |_|\__|_|  \__,_|\__\___/|_|   ");
     info!(logger, "");
 }
 

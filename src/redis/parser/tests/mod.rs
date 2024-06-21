@@ -1,7 +1,7 @@
-use crate::lib::redis::parser::{read_array, read_bulk_string, read_integer, read_strict_string};
-use crate::lib::redis::stream::tests::TestRedisStream;
-use crate::lib::redis::stream::RedisStream;
-use crate::lib::redis::types::{
+use crate::redis::parser::{read_array, read_bulk_string, read_integer, read_strict_string};
+use crate::redis::stream::tests::TestRedisStream;
+use crate::redis::stream::RedisStream;
+use crate::redis::types::{
     ErrorKind, RedisError, RedisValue, REDIS_TYPE_ARRAY, REDIS_TYPE_BULK_STRING, REDIS_TYPE_ERROR,
     REDIS_TYPE_INTEGER, REDIS_TYPE_STRING,
 };

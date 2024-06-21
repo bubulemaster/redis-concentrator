@@ -4,9 +4,9 @@
 pub mod tests;
 
 use crate::config::Config;
-use crate::lib::redis::stream::network::NetworkStream;
-use crate::lib::redis::stream::RedisStream;
-use crate::lib::redis::types::RedisError;
+use crate::redis::stream::network::NetworkStream;
+use crate::redis::stream::RedisStream;
+use crate::redis::types::RedisError;
 use crate::node::create_redis_stream_connection;
 use crate::sentinel::MasterChangeNotification;
 use std::collections::HashMap;
@@ -22,6 +22,8 @@ pub fn watch_client(
     logger: slog::Logger,
     tx_new_client: Sender<(TcpStream, SocketAddr)>,
 ) -> Result<(), RedisError> {
+    info!(logger, "Listen connection to {}", &config.bind);
+
     let listener = match TcpListener::bind(&config.bind) {
         Ok(l) => l,
         Err(e) => return Err(RedisError::from_io_error(e)),
@@ -85,7 +87,7 @@ pub fn copy_data_from_client_to_redis(
     let mut client_map = HashMap::new();
     let mut redis_master_addr = String::from(redis_master_addr);
 
-    // TODO allow configuration
+    // TODO this code is heavy load. Must be rewrite.
     let sleep_duration = time::Duration::from_millis(200);
 
     loop {

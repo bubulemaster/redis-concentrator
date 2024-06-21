@@ -1,25 +1,25 @@
-# Red Stream Lollipop
+# Redis concentrator
 
   [![Status](https://img.shields.io/badge/status-active-success.svg)]()
-  [![GitHub Issues](https://img.shields.io/github/issues/bubulemaster/red-stream-lollipop.svg)](https://github.com/bubulemaster/red-stream-lollipop/issues)
-  [![GitHub Pull Requests](https://img.shields.io/github/issues-pr/bubulemaster/red-stream-lollipop.svg)](https://github.com/bubulemaster/red-stream-lollipop/pulls)
+  [![GitHub Issues](https://img.shields.io/github/issues/emeric-martineau/redis-concentrator.svg)](https://github.com/emeric-martineau/redis-concentrator/issues)
+  [![GitHub Pull Requests](https://img.shields.io/github/issues-pr/emeric-martineau/redis-concentrator.svg)](https://github.com/emeric-martineau/redis-concentrator/pulls)
   [![License](https://img.shields.io/badge/license-Apache2-blue.svg)](/LICENSE)
 
 ---
 
-## About Red Stream Lollipop
-**Red Stream Lollipop** provide an easy way to connect to Redis Master/Slave or to Redis Cluster (comming soon).
+## About Redis concentrator
+**Redis concentrator** provide an easy way to connect to Redis Master/Slave or to Redis Cluster (comming soon).
 
-When you want to connect to Redis you must check if your library support Redis mode. For example [php-redis](https://github.com/phpredis/phpredis) don't provide support of master/slave. With **Red Stream Lollipop** you can connect you PHP application to Redis master/slave just by giving **Red Stream Lollipop** ip-port.
+When you want to connect to Redis you must check if your library support Redis mode. For example [php-redis](https://github.com/phpredis/phpredis) don't provide support of master/slave. With **Redis concentrator** you can connect you PHP application to Redis master/slave just by giving **Redis concentrator** ip-port.
 
-## Getting Started Red Stream Lollipop
+## Getting Started Redis concentrator
 These instructions will get you a copy of the project up and running on your local machine.
 
 ### Prerequisites
-To use **Red Stream Lollipop** no prerequisites need.
+To use **Redis concentrator** no prerequisites need.
 
 ### Installing and running
-Just get binary from [GitHub release repository](https://github.com/bubulemaster/red-stream-lollipop/releases) and put it in somewhere what you want.
+Just get binary from [GitHub release repository](https://github.com/emeric-martineau/redis-concentrator/releases) and put it in somewhere what you want.
 
 After, create a [YAML](https://yaml.org/) file like below:
 
@@ -38,10 +38,10 @@ log:
 And run
 
 ```
-rsl ./my_config_file.yaml
+redis-concentrator ./my_config_file.yaml
 ```
 
-Now, set you client to connect your **Red Stream Lollipop** server.
+Now, set you client to connect your **Redis concentrator** server.
 
 ```
 ./redis-cli -p 6578
@@ -62,7 +62,7 @@ db0:keys=1,expires=0,avg_ttl=0
 See [redis-concentrator-config.yaml.sample](./redis-concentrator-config.yaml.sample) for more options.
 
 ### How it's works.
-**Red Stream Lollipop** has one process and two threads.
+**Redis concentrator** has one process and two threads.
 
 First thread wait client connection.
 
@@ -75,10 +75,10 @@ The main process copy data from/to client to/from Redis master.
 
 Contributions, issues and feature requests are welcome!
 
-Feel free to check [issues page](https://github.com/bubulemaster/red-stream-lollipop/issue).
+Feel free to check [issues page](https://github.com/emeric-martineau/redis-concentrator/issue).
 
 ### Prerequisites
-To build **Red Stream Lollipop** you only need [Rust](https://www.rust-lang.org) 1.37.0 (maybe build with older version) and [rustfmt](https://github.com/rust-lang/rustfmt) package.
+To build **Redis concentrator** you only need [Rust](https://www.rust-lang.org) 1.78.0 (maybe build with older version) and [rustfmt](https://github.com/rust-lang/rustfmt) package.
 
 ### Build
 Just run:
@@ -86,7 +86,7 @@ Just run:
 $ cargo build --release
 ```
 
-### Running the tests Red Stream Lollipop
+### Running the tests Redis concentrator
 Just run:
 ```
 $ cargo test
@@ -97,16 +97,16 @@ Code style is formatted by `rustfmt`.
 
 ---
 
-## Built Using Red Stream Lollipop
+## Built Using Redis concentrator
 - [Rust](https://www.rust-lang.org) - Language
 - [Redis](https://redis.io) - Database
 
-## Authors Red Stream Lollipop
-- [bubulemaster](https://github.com/bubulemaster) - Idea & Initial work
+## Authors Redis concentrator
+- [emeric-martineau](https://github.com/emeric-martineau) - Idea & Initial work
 
 ---
 
 ## License
-Copyright © MARTINEAU Emeric [bubulemaster](https://github.com/bubulemaster) .
+Copyright © MARTINEAU Emeric [emeric-martineau](https://github.com/emeric-martineau) .
 
 This project is Apache 2 licensed.

@@ -1,7 +1,7 @@
 //! This module contain abstract type of network.
 //!
 
-use crate::lib::redis::stream::RedisStream;
+use crate::redis::stream::RedisStream;
 use std::io::ErrorKind;
 use std::io::Read;
 use std::io::Write;

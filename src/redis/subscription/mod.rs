@@ -3,9 +3,9 @@
 #[cfg(test)]
 pub mod tests;
 
-use crate::lib::redis::parser::read_array;
-use crate::lib::redis::stream::RedisStream;
-use crate::lib::redis::types::{RedisError, RedisValue};
+use crate::redis::parser::read_array;
+use crate::redis::stream::RedisStream;
+use crate::redis::types::{RedisError, RedisValue};
 use std::fmt::{Debug, Error, Formatter};
 
 /// Structure when you subscribe to channel.

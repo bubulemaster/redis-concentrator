@@ -1,7 +1,7 @@
 //! This module contains routine to connect to redis node.
 //!
-use crate::lib::redis::stream::network::NetworkStream;
-use crate::lib::redis::types::RedisError;
+use crate::redis::stream::network::NetworkStream;
+use crate::redis::types::RedisError;
 use std::net::TcpStream;
 
 /// Create a a network stream in blocking mode.

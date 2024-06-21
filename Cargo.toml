@@ -1,9 +1,9 @@
 [package]
-name = "red-stream-lollipop"
+name = "redis-concentrator"
 version = "0.0.1"
 authors = ["Emeric MARTINEAU"]
 edition = "2018"
-description = "Red Stream Lollipop is tool to easly connect your application to Redis without know his infrastructure."
+description = "Redis concentrator is tool to easly connect your application to Redis without know his infrastructure."
 repository = "..."
 readme = "README.md"
 keywords = ["redis", "sentinel", "cluster"]
