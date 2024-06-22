@@ -1,4 +1,4 @@
-extern crate serde_yaml;
+extern crate serde_yaml2;
 
 use std::fs::File;
 use std::io::{Error, ErrorKind, Read};
@@ -62,7 +62,7 @@ pub fn get_config(filename: String) -> Result<Config, Error> {
     //
     // Ok(deserialized_config)
 
-    match serde_yaml::from_str(&contents) {
+    match serde_yaml2::from_str(&contents) {
         Ok(deserialized_config) => Ok(deserialized_config),
         Err(err) => Err(Error::new(
             ErrorKind::Other,
