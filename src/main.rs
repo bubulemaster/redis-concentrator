@@ -9,15 +9,13 @@ mod client;
 mod config;
 mod redis;
 mod logging;
-mod node;
-mod sentinel;
 
 use std::env;
 
 use crate::client::{copy_data_from_client_to_redis, watch_client};
 use crate::config::{get_config, Config};
 use crate::logging::build_log;
-use crate::sentinel::{watch_sentinel, MasterChangeNotification};
+use crate::redis::sentinel::{watch_sentinel, MasterChangeNotification};
 use std::net::{SocketAddr, TcpStream};
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};

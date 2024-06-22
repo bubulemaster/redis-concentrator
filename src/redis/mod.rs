@@ -1,7 +1,9 @@
 //! This module contain basic Redis commands.
 //!
 mod parser;
+pub mod node;
 pub mod stream;
+pub mod sentinel;
 pub mod subscription;
 pub mod types;
 

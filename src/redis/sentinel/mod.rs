@@ -4,7 +4,7 @@ use crate::config::Config;
 use crate::redis::subscription::RedisSubscription;
 use crate::redis::types::{ErrorKind, RedisError, RedisValue};
 use crate::redis::{convert_to_string, RedisConnector};
-use crate::node::{create_redis_stream_connection, create_redis_stream_connection_blocking};
+use crate::redis::node::{create_redis_stream_connection, create_redis_stream_connection_blocking};
 use std::sync::mpsc::Sender;
 use std::thread;
 
