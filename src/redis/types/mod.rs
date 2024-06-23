@@ -1,4 +1,4 @@
-//! This module contain all type of Redis Concentrator.
+//! This module contain all type of RedConcentrator.
 //!
 
 /// Redis type returned by protocol.

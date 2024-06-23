@@ -3,7 +3,7 @@ extern crate serde_yaml2;
 use std::fs::File;
 use std::io::{Error, ErrorKind, Read};
 
-/// Config structure of Redis Concentrator
+/// Config structure of RedConcentrator
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub struct Config {
     pub bind: String,

@@ -1,5 +1,6 @@
 //! This module contains routine to watch sentinels.
 //!
+use crate::app::MainLoopEvent;
 use crate::config::Config;
 use crate::redis::subscription::RedisSubscription;
 use crate::redis::types::{ErrorKind, RedisError, RedisValue};
@@ -46,7 +47,7 @@ fn manage_redis_subscription_error(error: RedisError) -> Result<(), RedisError> 
 fn manage_subscription_data(
     data: RedisValue,
     logger: &slog::Logger,
-    tx_master_change: &Sender<MasterChangeNotification>,
+    tx_master_change: &Sender<MainLoopEvent>,
 ) -> Result<(), RedisError> {
     match data {
         RedisValue::Array(data) => {
@@ -76,7 +77,7 @@ fn manage_subscription_message(
     channel: &str,
     data: &RedisValue,
     logger: &slog::Logger,
-    tx_master_change: &Sender<MasterChangeNotification>,
+    tx_master_change: &Sender<MainLoopEvent>,
 ) -> Result<(), RedisError> {
     match msg_type {
         "subscribe" => manage_subscription_message_type_subscribe(channel, data, logger),
@@ -95,7 +96,7 @@ fn manage_subscription_message_type_message(
     channel: &str,
     data: &RedisValue,
     logger: &slog::Logger,
-    tx_master_change: &Sender<MasterChangeNotification>,
+    tx_master_change: &Sender<MainLoopEvent>,
 ) -> Result<(), RedisError> {
     if channel != "+switch-master" {
         return Ok(());
@@ -169,7 +170,7 @@ fn send_notification(
     old_redis_master_addr: &str,
     group_name: &str,
     _logger: &slog::Logger,
-    tx_master_change: &Sender<MasterChangeNotification>,
+    tx_master_change: &Sender<MainLoopEvent>,
 ) -> Result<(), RedisError> {
     let msg = MasterChangeNotification {
         new: String::from(new_redis_master_addr),
@@ -179,14 +180,14 @@ fn send_notification(
 
     // TODO check if master role
 
-    tx_master_change.send(msg).unwrap();
+    tx_master_change.send(MainLoopEvent::master_change(msg)).unwrap();
 
     Ok(())
 }
 /// Main loop to watch sentinel.
 fn watch_sentinel_loop(
     logger: slog::Logger,
-    tx_master_change: Sender<MasterChangeNotification>,
+    tx_master_change: Sender<MainLoopEvent>,
     sentinels_list: Vec<String>,
     group_name: String,
 ) -> Result<(), RedisError> {
@@ -264,7 +265,7 @@ fn watch_sentinel_loop(
 pub fn watch_sentinel(
     config: &Config,
     logger: slog::Logger,
-    tx_master_change: Sender<MasterChangeNotification>,
+    tx_master_change: Sender<MainLoopEvent>,
 ) -> Result<(), RedisError> {
     let sentinels_list = config.sentinels.as_ref().unwrap().clone();
     let group_name = String::from(&config.group_name);

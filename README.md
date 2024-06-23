@@ -1,4 +1,4 @@
-# Redis concentrator
+# RedConcentrator
 
   [![Status](https://img.shields.io/badge/status-active-success.svg)]()
   [![GitHub Issues](https://img.shields.io/github/issues/emeric-martineau/redis-concentrator.svg)](https://github.com/emeric-martineau/redis-concentrator/issues)
@@ -7,16 +7,16 @@
 
 ---
 
-## About Redis concentrator
-**Redis concentrator** provide an easy way to connect to Redis Master/Slave or to Redis Cluster (comming soon).
+## About RedConcentrator
+**RedConcentrator** provide an easy way to connect to Redis Master/Slave or to Redis Cluster (comming soon).
 
-When you want to connect to Redis you must check if your library support Redis mode. For example [php-redis](https://github.com/phpredis/phpredis) don't provide support of master/slave. With **Redis concentrator** you can connect you PHP application to Redis master/slave just by giving **Redis concentrator** ip-port.
+When you want to connect to Redis you must check if your library support Redis mode. For example [php-redis](https://github.com/phpredis/phpredis) don't provide support of master/slave. With **RedConcentrator** you can connect you PHP application to Redis master/slave just by giving **RedConcentrator** ip-port.
 
-## Getting Started Redis concentrator
+## Getting Started RedConcentrator
 These instructions will get you a copy of the project up and running on your local machine.
 
 ### Prerequisites
-To use **Redis concentrator** no prerequisites need.
+To use **RedConcentrator** no prerequisites need.
 
 ### Installing and running
 Just get binary from [GitHub release repository](https://github.com/emeric-martineau/redis-concentrator/releases) and put it in somewhere what you want.
@@ -41,7 +41,7 @@ And run
 redis-concentrator ./my_config_file.yaml
 ```
 
-Now, set you client to connect your **Redis concentrator** server.
+Now, set you client to connect your **RedConcentrator** server.
 
 ```
 ./redis-cli -p 6578
@@ -62,7 +62,7 @@ db0:keys=1,expires=0,avg_ttl=0
 See [redis-concentrator-config.yaml.sample](./redis-concentrator-config.yaml.sample) for more options.
 
 ### How it's works.
-**Redis concentrator** has one process and two threads.
+**RedConcentrator** has one process and two threads.
 
 First thread wait client connection.
 
@@ -78,7 +78,7 @@ Contributions, issues and feature requests are welcome!
 Feel free to check [issues page](https://github.com/emeric-martineau/redis-concentrator/issue).
 
 ### Prerequisites
-To build **Redis concentrator** you only need [Rust](https://www.rust-lang.org) 1.78.0 (maybe build with older version) and [rustfmt](https://github.com/rust-lang/rustfmt) package.
+To build **RedConcentrator** you only need [Rust](https://www.rust-lang.org) 1.78.0 (maybe build with older version) and [rustfmt](https://github.com/rust-lang/rustfmt) package.
 
 ### Build
 Just run:
@@ -86,7 +86,7 @@ Just run:
 $ cargo build --release
 ```
 
-### Running the tests Redis concentrator
+### Running the tests RedConcentrator
 Just run:
 ```
 $ cargo test
@@ -97,11 +97,11 @@ Code style is formatted by `rustfmt`.
 
 ---
 
-## Built Using Redis concentrator
+## Built Using RedConcentrator
 - [Rust](https://www.rust-lang.org) - Language
 - [Redis](https://redis.io) - Database
 
-## Authors Redis concentrator
+## Authors RedConcentrator
 - [emeric-martineau](https://github.com/emeric-martineau) - Idea & Initial work
 
 ---

@@ -3,6 +3,7 @@
 #[cfg(test)]
 pub mod tests;
 
+use crate::app::MainLoopEvent;
 use crate::config::Config;
 use crate::redis::stream::network::NetworkStream;
 use crate::redis::stream::RedisStream;
@@ -17,10 +18,10 @@ use std::{thread, time};
 
 /// Wait new client connection.
 /// Create a new thread for do this.
-pub fn watch_client(
+pub fn watch_new_client_connection(
     config: &Config,
     logger: slog::Logger,
-    tx_new_client: Sender<(TcpStream, SocketAddr)>,
+    tx_new_client: Sender<MainLoopEvent>,
 ) -> Result<(), RedisError> {
     info!(logger, "Listen connection to {}", &config.bind);
 
@@ -64,7 +65,7 @@ pub fn watch_client(
                     );
                 }
 
-                tx_new_client.send((client_stream, client_addr)).unwrap();
+                tx_new_client.send(MainLoopEvent::new_client(client_stream, client_addr)).unwrap();
             }
             Err(e) => {
                 error!(logger, "Error when establish client connection {:?}.", e);
@@ -84,7 +85,7 @@ pub fn copy_data_from_client_to_redis(
     rx_master_change: Receiver<MasterChangeNotification>,
     rx_new_client: Receiver<(TcpStream, SocketAddr)>,
 ) -> Result<(), RedisError> {
-    let mut client_map = HashMap::new();
+    let mut client_map: HashMap<String, (NetworkStream, NetworkStream)> = HashMap::new();
     let mut redis_master_addr = String::from(redis_master_addr);
 
     // TODO this code is heavy load. Must be rewrite.
