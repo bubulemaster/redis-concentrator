@@ -113,7 +113,13 @@ fn run_watch_sentinel(
     })
 }
 
-// TODO return error value
+/// Fatal error, stop RedConcentrator
+fn fatal_error(logger: &slog::Logger, e: String) {
+    error!(logger, "{}", e);
+    eprintln!("{}", e);
+    std::process::exit(-1);
+}
+
 fn main() {
     // Get command line options
     let args: Vec<String> = env::args().collect();
@@ -154,18 +160,12 @@ fn main() {
                     sentinel_data.tx_main_loop_message,
                     sentinel_data.rx_main_loop_message,
                     sentinel_data.redis_master_address) {
-                        error!(logger_main.clone(), "{}", e);
-                        eprintln!("{}", e);
-                        std::process::exit(-1);
+                        fatal_error(&logger_main, e);
                     }
             },
-            Err(e) => {
-                error!(logger_main.clone(), "{}", e);
-                eprintln!("{}", e);
-                std::process::exit(-1);
-            }
+            Err(e) => fatal_error(&logger_main, e)
         }
     } else {
-        error!(logger_main, "No sentinels found in config file");
+        fatal_error(&logger_main, String::from("No sentinels found in config file"));
     }
 }
