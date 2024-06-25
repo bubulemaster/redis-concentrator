@@ -7,7 +7,7 @@ use crate::redis::types::{ErrorKind, RedisError, RedisValue};
 use crate::redis::{convert_to_string, RedisConnector};
 use crate::redis::node::{create_redis_stream_connection, create_redis_stream_connection_blocking};
 use std::sync::mpsc::Sender;
-use std::thread;
+use std::{thread, time};
 
 /// Struct to communicate a master change ip address.
 #[derive(Debug)]
@@ -158,7 +158,7 @@ fn manage_subscription_message_type_subscribe(
 
     info!(
         logger,
-        "Subscribe successfully of '{}' channel. Currently we are currently subscribe to {} channel(s).",
+        "Subscribe successfully of '{}' channel. Currently we are subscribe to {} channel(s).",
         channel, num);
 
     Ok(())
@@ -190,8 +190,10 @@ fn watch_sentinel_loop(
     tx_master_change: Sender<MainLoopEvent>,
     sentinels_list: Vec<String>,
     group_name: String,
+    check_freqency: u64
 ) -> Result<(), RedisError> {
     let mut redis_master_addr = String::new();
+    let duration = time::Duration::from_millis(check_freqency);
 
     // Iterate on sentinel list in case of lost sentinel
     for redis_sentinel_addr in sentinels_list {
@@ -243,6 +245,8 @@ fn watch_sentinel_loop(
                 }
             };
         }
+        
+        thread::sleep(duration);
     }
 
     Ok(())
@@ -267,16 +271,21 @@ pub fn watch_sentinel(
     logger: slog::Logger,
     tx_master_change: Sender<MainLoopEvent>,
 ) -> Result<(), RedisError> {
-    let sentinels_list = config.sentinels.as_ref().unwrap().clone();
+    let sentinels = config.sentinels.as_ref().unwrap();
     let group_name = String::from(&config.group_name);
 
-    if sentinels_list.len() == 0 {
+    if sentinels.address.len() == 0 {
         error!(logger, "Sentinel list empty.");
         return Err(RedisError::from_message("Sentinel list empty."));
     }
 
+    let check_freqency = sentinels.check_freqency;
+    let sentinels_list = sentinels.address.clone();
+
+    debug!(logger, "Check state of sentinel every {}ms", check_freqency);
+
     thread::spawn(move || {
-        let status = watch_sentinel_loop(logger, tx_master_change, sentinels_list, group_name);
+        let status = watch_sentinel_loop(logger, tx_master_change, sentinels_list, group_name, check_freqency);
 
         if let Err(_e) = status {
             // TODO send to main process to stop it

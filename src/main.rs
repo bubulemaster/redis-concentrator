@@ -1,5 +1,3 @@
-#[macro_use]
-extern crate serde_derive;
 extern crate log;
 extern crate serde_json;
 #[macro_use]
@@ -58,8 +56,9 @@ fn run_watch(
         return Err(format!("Error from listen client: {:?}", e));
     }
 
-    // TODO master change message
-    app::run_main_loop(rx_main_loop_message, redis_master_address, logger);
+    if let Err(e) = app::run_main_loop(rx_main_loop_message, redis_master_address, logger) {
+        return Err(format!("Error run main loop: {:?}", e));
+    }
 
     // if let Err(e) = copy_data_from_client_to_redis(
     //     &data.new,

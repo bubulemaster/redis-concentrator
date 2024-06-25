@@ -1,14 +1,21 @@
-extern crate serde_yaml2;
-
 use std::fs::File;
 use std::io::{Error, ErrorKind, Read};
+use serde::{Serialize, Deserialize};
+
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
+pub struct Sentinels {
+    pub address: Vec<String>,
+    #[serde(default = "default_sentinel_check_freqency_default")]
+    pub check_freqency: u64
+}
 
 /// Config structure of RedConcentrator
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub struct Config {
     pub bind: String,
     pub group_name: String,
-    pub sentinels: Option<Vec<String>>,
+    #[serde(default)]
+    pub sentinels: Option<Sentinels>,
     #[serde(default = "ConfigLog::default")]
     pub log: ConfigLog,
 }
@@ -49,6 +56,11 @@ fn default_level() -> String {
 // Call by serde to have default value.
 fn default_logo() -> bool {
     true
+}
+
+// Default value
+fn default_sentinel_check_freqency_default() -> u64 {
+    1000
 }
 
 ///
