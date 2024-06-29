@@ -8,6 +8,7 @@ use crate::redis::{convert_to_string, RedisConnector};
 use crate::redis::node::{create_redis_stream_connection, create_redis_stream_connection_blocking};
 use std::sync::mpsc::Sender;
 use std::{thread, time};
+use log::{error, info, debug, warn};
 
 /// Struct to communicate a master change ip address.
 #[derive(Debug)]
@@ -46,7 +47,6 @@ fn manage_redis_subscription_error(error: RedisError) -> Result<(), RedisError> 
 /// If we receive message.
 fn manage_subscription_data(
     data: RedisValue,
-    logger: &slog::Logger,
     tx_master_change: &Sender<MainLoopEvent>,
 ) -> Result<(), RedisError> {
     match data {
@@ -56,14 +56,13 @@ fn manage_subscription_data(
             let data = data.get(2).unwrap();
 
             debug!(
-                logger,
                 "Receive message type: '{}' from channel: '{}' with data: '{:?}'",
                 msg_type,
                 channel,
                 data
             );
 
-            manage_subscription_message(&msg_type, &channel, &data, logger, tx_master_change)
+            manage_subscription_message(&msg_type, &channel, &data, tx_master_change)
         }
         _ => Err(RedisError::from_message(
             "Impossible, subscription don't return array!",
@@ -76,16 +75,15 @@ fn manage_subscription_message(
     msg_type: &str,
     channel: &str,
     data: &RedisValue,
-    logger: &slog::Logger,
     tx_master_change: &Sender<MainLoopEvent>,
 ) -> Result<(), RedisError> {
     match msg_type {
-        "subscribe" => manage_subscription_message_type_subscribe(channel, data, logger),
+        "subscribe" => manage_subscription_message_type_subscribe(channel, data),
         "message" => {
-            manage_subscription_message_type_message(channel, data, logger, tx_master_change)
+            manage_subscription_message_type_message(channel, data, tx_master_change)
         }
         e => {
-            warn!(logger, "Unknow message type '{}'!", e);
+            warn!("Unknow message type '{}'!", e);
             Ok(())
         }
     }
@@ -95,7 +93,6 @@ fn manage_subscription_message(
 fn manage_subscription_message_type_message(
     channel: &str,
     data: &RedisValue,
-    logger: &slog::Logger,
     tx_master_change: &Sender<MainLoopEvent>,
 ) -> Result<(), RedisError> {
     if channel != "+switch-master" {
@@ -108,7 +105,7 @@ fn manage_subscription_message_type_message(
     3) "cluster_1 127.0.0.1 6001 127.0.0.1 6000" Groupe name : Old master -> New master
     */
     let message = convert_to_string(data)?;
-    debug!(logger, "{:?}", message);
+    debug!("{:?}", message);
     let split = message.split(' ');
     let vec = split.collect::<Vec<&str>>();
 
@@ -133,7 +130,6 @@ fn manage_subscription_message_type_message(
         &new_master_addr,
         &old_master_addr,
         group_name,
-        logger,
         tx_master_change,
     )
 }
@@ -144,7 +140,6 @@ fn manage_subscription_message_type_message(
 fn manage_subscription_message_type_subscribe(
     channel: &str,
     data: &RedisValue,
-    logger: &slog::Logger,
 ) -> Result<(), RedisError> {
     let num = match data {
         RedisValue::Integer(d) => d,
@@ -157,8 +152,7 @@ fn manage_subscription_message_type_subscribe(
     };
 
     info!(
-        logger,
-        "Subscribe successfully of '{}' channel. Currently we are subscribe to {} channel(s).",
+        "Subscribe successfully of '{}' channel. Currently we are currently subscribe to {} channel(s).",
         channel, num);
 
     Ok(())
@@ -169,7 +163,6 @@ fn send_notification(
     new_redis_master_addr: &str,
     old_redis_master_addr: &str,
     group_name: &str,
-    _logger: &slog::Logger,
     tx_master_change: &Sender<MainLoopEvent>,
 ) -> Result<(), RedisError> {
     let msg = MasterChangeNotification {
@@ -186,7 +179,6 @@ fn send_notification(
 }
 /// Main loop to watch sentinel.
 fn watch_sentinel_loop(
-    logger: slog::Logger,
     tx_master_change: Sender<MainLoopEvent>,
     sentinels_list: Vec<String>,
     group_name: String,
@@ -202,7 +194,7 @@ fn watch_sentinel_loop(
         let result_new_redis_master_addr = sentinel_connector.get_master_addr(&group_name);
 
         if let Err(e) = result_new_redis_master_addr {
-            error!(logger, "Master group not found or network connection issue.");
+            error!("Master group not found or network connection issue.");
             return Err(e);
         }
 
@@ -214,26 +206,24 @@ fn watch_sentinel_loop(
                 &new_redis_master_addr,
                 &redis_master_addr,
                 &group_name,
-                &logger,
                 &tx_master_change,
             )?;
 
             redis_master_addr = new_redis_master_addr;
         }
 
-        info!(logger, "Connect to new sentinel {}.", &redis_sentinel_addr);
+        info!("Connect to new sentinel {}.", &redis_sentinel_addr);
 
         let mut sentinel_subscription =
             create_redis_subscription_switch_master(&redis_sentinel_addr)?;
 
         'sentinel_pool: loop {
             match sentinel_subscription.pool() {
-                Ok(data) => manage_subscription_data(data, &logger, &tx_master_change)?,
+                Ok(data) => manage_subscription_data(data, &tx_master_change)?,
                 Err(e) => {
                     if let ErrorKind::IoError = e.kind() {
                         if let std::io::ErrorKind::BrokenPipe = e.io_error_kind().unwrap() {
                             warn!(
-                                logger,
                                 "Lost connection with sentinel {}!", &redis_sentinel_addr
                             );
 
@@ -268,26 +258,26 @@ fn watch_sentinel_loop(
 /// End loop
 pub fn watch_sentinel(
     config: &Config,
-    logger: slog::Logger,
     tx_master_change: Sender<MainLoopEvent>,
 ) -> Result<(), RedisError> {
     let sentinels = config.sentinels.as_ref().unwrap();
     let group_name = String::from(&config.group_name);
 
     if sentinels.address.len() == 0 {
-        error!(logger, "Sentinel list empty.");
+        error!("Sentinel list empty.");
         return Err(RedisError::from_message("Sentinel list empty."));
     }
 
     let check_freqency = sentinels.check_freqency;
     let sentinels_list = sentinels.address.clone();
 
-    debug!(logger, "Check state of sentinel every {}ms", check_freqency);
+    debug!("Check state of sentinel every {}ms", check_freqency);
 
     thread::spawn(move || {
-        let status = watch_sentinel_loop(logger, tx_master_change, sentinels_list, group_name, check_freqency);
+        let status = watch_sentinel_loop(tx_master_change, sentinels_list, group_name, check_freqency);
 
-        if let Err(_e) = status {
+        if let Err(e) = status {
+            error!("Error when get sentinel status {}", e);
             // TODO send to main process to stop it
         }
     });

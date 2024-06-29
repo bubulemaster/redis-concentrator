@@ -1,0 +1,36 @@
+# Scan this file for changes every 30 seconds
+refresh_rate: 30 seconds
+
+appenders:
+  # An appender named "stdout" that writes to stdout
+  stdout:
+    kind: console
+    encoder:
+      # From https://medium.com/@nikmas_dev/advanced-logging-in-rust-with-log4rs-2d712bb322de
+      #
+      # {d(%Y-%m-%d %H:%M:%S)}. Defines the custom date format. It’s more readable than default ISO 8601.
+      # {({l}):5.5}. It will output the log level limited exactly to 5 bytes
+      # {f}:{L}. f stands for the source file where the log message came from. And L is the line where the corresponding logging macro was invoked. Thus you can easily find out the place of a problem.
+      # {m}{n}. m means the log message and n is a platform-specific newline.
+      #
+      # > pattern: "{d(%Y-%m-%d %H:%M:%S)} | {({l}):5.5} | {f}:{L} — {m}{n}"
+      #
+      # From log4rs documentation (with color)
+      #
+      # > pattern: "{d(%+)(utc)} [{f}:{L}] {h({l})} {M}:{m}{n}"
+      pattern: "{d(%Y-%m-%d %H:%M:%S)(utc)} | {h({l}):5.5} | {m}{n}"
+
+# Set the default logging level to "warn" and attach the "stdout" appender to the root
+root:
+  level: info
+  appenders:
+    - stdout
+
+loggers:
+  red_concentrator::client:
+    level: debug
+  red_concentrator::redis::sentinel:
+    level: debug
+  red_concentrator::app:
+    level: debug
+    

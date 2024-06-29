@@ -1,6 +1,5 @@
 use crate::client::manage_new_client_message;
 use crate::config::{Config, ConfigLog};
-use crate::logging::build_log;
 use std::collections::HashMap;
 use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::sync::mpsc;
@@ -8,20 +7,6 @@ use std::sync::mpsc::{Receiver, Sender};
 
 #[test]
 fn test_manage_new_client_message_ok() {
-    let config = Config {
-        bind: "".to_string(),
-        group_name: "".to_string(),
-        sentinels: None,
-        log: ConfigLog {
-            log_type: "console".to_string(),
-            level: "debug".to_string(),
-            file: None,
-            logo: false,
-        },
-    };
-
-    let logger = build_log(&config);
-
     let (tx_new_client, rx_new_client): (
         Sender<(TcpStream, SocketAddr)>,
         Receiver<(TcpStream, SocketAddr)>,
@@ -51,7 +36,6 @@ fn test_manage_new_client_message_ok() {
     tx_new_client.send((client, socket)).unwrap();
 
     manage_new_client_message(
-        &logger,
         &rx_new_client,
         &mut client_map,
         &mut redis_master_addr,

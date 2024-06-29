@@ -81,6 +81,8 @@ Feel free to check [issues page](https://github.com/emeric-martineau/redis-conce
 To build **RedConcentrator** you only need [Rust](https://www.rust-lang.org) 1.78.0 (maybe build with older version) and [rustfmt](https://github.com/rust-lang/rustfmt) package.
 
 ### Build
+You need install `pkg-config` and `libssl-dev` under Linux.
+
 Just run:
 ```
 $ cargo build --release

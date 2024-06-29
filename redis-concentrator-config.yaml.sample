@@ -1,16 +1,24 @@
 ---
 bind: 127.0.0.1:6578
 group_name: "cluster_1"
+
+timeout:
+  # Timeout in ms
+  sentinels: 5000
+
 sentinels:
+<<<<<<< HEAD
   address:
     - 127.0.0.1:26000
     - 127.0.0.1:26001
     - 127.0.0.1:26002
   check_freqency: 1500
+=======
+  - 127.0.0.1:26000
+  - 127.0.0.1:26001
+  - 127.0.0.1:26002
+
+>>>>>>> 6d4a981 (Replace slog by log4rs)
 log:
-  type: console
-  level: debug
+  file: log4rs.yml
   logo: true
-#  type: file
-#  file: "dddd"
-#  type: syslog

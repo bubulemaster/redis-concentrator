@@ -15,15 +15,15 @@ use std::io::ErrorKind;
 use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::sync::mpsc::{Receiver, Sender};
 use std::{thread, time};
+use log::{error, info, debug, warn};
 
 /// Wait new client connection.
 /// Create a new thread for do this.
 pub fn watch_new_client_connection(
     config: &Config,
-    logger: slog::Logger,
     tx_new_client: Sender<MainLoopEvent>,
 ) -> Result<(), RedisError> {
-    info!(logger, "Listen connection to {}", &config.bind);
+    info!("Listen connection to {}", &config.bind);
 
     let listener = match TcpListener::bind(&config.bind) {
         Ok(l) => l,
@@ -36,7 +36,6 @@ pub fn watch_new_client_connection(
                 let (client_stream, client_addr) = d;
 
                 debug!(
-                    logger,
                     "New client from {}:{}",
                     client_addr.ip().to_string(),
                     client_addr.port()
@@ -45,7 +44,6 @@ pub fn watch_new_client_connection(
                 // Set non blocking mode to incoming connection
                 if let Err(e) = client_stream.set_nonblocking(true) {
                     error!(
-                        logger,
                         "Impossible to set client is non blocking mode from {}:{} cause {:?}",
                         client_addr.ip().to_string(),
                         client_addr.port(),
@@ -57,7 +55,6 @@ pub fn watch_new_client_connection(
 
                 if let Err(e) = client_stream.set_nodelay(true) {
                     warn!(
-                        logger,
                         "Impossible to set client is no delay mode from {}:{} cause {:?}",
                         client_addr.ip().to_string(),
                         client_addr.port(),
@@ -68,7 +65,7 @@ pub fn watch_new_client_connection(
                 tx_new_client.send(MainLoopEvent::new_client(client_stream, client_addr)).unwrap();
             }
             Err(e) => {
-                error!(logger, "Error when establish client connection {:?}.", e);
+                error!("Error when establish client connection {:?}.", e);
 
                 continue;
             }
@@ -81,7 +78,6 @@ pub fn watch_new_client_connection(
 /// Create loop to copy data.
 pub fn copy_data_from_client_to_redis(
     redis_master_addr: &str,
-    logger: slog::Logger,
     rx_master_change: Receiver<MasterChangeNotification>,
     rx_new_client: Receiver<(TcpStream, SocketAddr)>,
 ) -> Result<(), RedisError> {
@@ -96,7 +92,7 @@ pub fn copy_data_from_client_to_redis(
 
         // TODO check error to see if thread is dead.
         if let Ok(msg) = msg_master_change {
-            debug!(logger, "Master change: {:?}", msg);
+            debug!("Master change: {:?}", msg);
 
             redis_master_addr = msg.new.clone();
 
@@ -104,13 +100,12 @@ pub fn copy_data_from_client_to_redis(
         }
 
         manage_new_client_message(
-            &logger,
             &rx_new_client,
             &mut client_map,
             &mut redis_master_addr,
         );
 
-        manage_client_data(&logger, &mut client_map);
+        manage_client_data(&mut client_map);
 
         thread::sleep(sleep_duration);
     }
@@ -118,7 +113,6 @@ pub fn copy_data_from_client_to_redis(
 
 /// Manage data (copy) from/to client.
 fn manage_client_data(
-    logger: &slog::Logger,
     client_map: &mut HashMap<String, (NetworkStream, NetworkStream)>,
 ) {
     let mut remove_connection = Vec::new();
@@ -132,7 +126,6 @@ fn manage_client_data(
                 if let Err(e) = client_redis_stream.write(data.as_ref()) {
                     if e.kind() != ErrorKind::BrokenPipe {
                         debug!(
-                            logger,
                             "Unable to write data from client to redis server cause: {}", e
                         );
                     }
@@ -142,7 +135,7 @@ fn manage_client_data(
             }
             Err(e) => {
                 if e.kind() != ErrorKind::BrokenPipe {
-                    debug!(logger, "Error when read data from client cause: {}", e);
+                    debug!("Error when read data from client cause: {}", e);
                 }
 
                 remove_connection.push(key.clone());
@@ -155,7 +148,6 @@ fn manage_client_data(
                 if let Err(e) = client_stream.write(data.as_ref()) {
                     if e.kind() != ErrorKind::BrokenPipe {
                         debug!(
-                            logger,
                             "Unable to write data from redis serveur to client cause: {}", e
                         );
                     }
@@ -163,7 +155,7 @@ fn manage_client_data(
             }
             Err(e) => {
                 if e.kind() != ErrorKind::BrokenPipe {
-                    debug!(logger, "Error when read data from client cause: {}", e);
+                    debug!("Error when read data from client cause: {}", e);
                 }
 
                 remove_connection.push(key.clone());
@@ -172,14 +164,13 @@ fn manage_client_data(
     }
 
     for key in remove_connection {
-        debug!(logger, "Close connection {}", &key);
+        debug!("Close connection {}", &key);
         client_map.remove(&key).unwrap();
     }
 }
 
 /// Manage client connection.
 fn manage_new_client_message(
-    logger: &slog::Logger,
     rx_new_client: &Receiver<(TcpStream, SocketAddr)>,
     client_map: &mut HashMap<String, (NetworkStream, NetworkStream)>,
     redis_master_addr: &mut String,
@@ -188,7 +179,7 @@ fn manage_new_client_message(
 
     // TODO check error to see if thread is dead.
     if let Ok(msg) = msg_new_client {
-        debug!(logger, "New client: {:?}", msg);
+        debug!("New client: {:?}", msg);
 
         // Create one connection to master per client
         if let Ok(client_redis_stream) = create_redis_stream_connection(&redis_master_addr) {
@@ -202,7 +193,7 @@ fn manage_new_client_message(
             );
         } else {
             // TODO stop thread
-            error!(logger, "Can't create new Redis master connection");
+            error!("Can't create new Redis master connection");
         }
     }
 }
