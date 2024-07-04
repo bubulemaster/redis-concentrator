@@ -2,13 +2,6 @@ use std::fs::File;
 use std::io::{Error, ErrorKind, Read};
 use serde::{Serialize, Deserialize};
 
-#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
-pub struct Sentinels {
-    pub address: Vec<String>,
-    #[serde(default = "default_sentinel_check_freqency_default")]
-    pub check_freqency: u64
-}
-
 /// Config structure of RedConcentrator
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub struct Config {
@@ -19,7 +12,16 @@ pub struct Config {
     #[serde(default = "ConfigLog::default")]
     pub log: ConfigLog,
     #[serde(default = "ConfigTimeout::default")]
-    pub timeout: ConfigTimeout
+    pub timeout: ConfigTimeout,
+    #[serde(default = "ConfigWorker::default")]
+    pub workers: ConfigWorker
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
+pub struct Sentinels {
+    pub address: Vec<String>,
+    #[serde(default = "default_sentinel_check_freqency_default")]
+    pub check_freqency: u64
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
@@ -42,13 +44,47 @@ impl ConfigLog {
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub struct ConfigTimeout {
     #[serde(default = "default_timeout")]
-    pub sentinels: u64
+    pub sentinels: u64,
+    #[serde(default = "default_timeout")]
+    pub worker_idle_timeout: u64    
 }
 
 impl ConfigTimeout {
     pub fn default() -> Self {
         Self {
-            sentinels: 5000,
+            sentinels: default_timeout(),
+            worker_idle_timeout: default_timeout()
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
+pub struct ConfigWorker {
+    #[serde(default = "ConfigWorkerPool::default")]
+    pub pool: ConfigWorkerPool
+}
+
+impl ConfigWorker {
+    pub fn default() -> Self {
+        Self {
+            pool: ConfigWorkerPool::default(),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
+pub struct ConfigWorkerPool {
+    #[serde(default = "default_pool_size_min")]
+    pub min: u8,
+    #[serde(default = "default_pool_size_max")]
+    pub max: u8,
+}
+
+impl ConfigWorkerPool {
+    pub fn default() -> Self {
+        Self {
+            min: 5,
+            max: 10
         }
     }
 }
@@ -71,6 +107,15 @@ fn default_sentinel_check_freqency_default() -> u64 {
 // Default value
 fn default_timeout() -> u64 {
     5000
+}
+
+// Default value
+fn default_pool_size_min() -> u8 {
+    5
+}
+// Default value
+fn default_pool_size_max() -> u8 {
+    10
 }
 
 ///

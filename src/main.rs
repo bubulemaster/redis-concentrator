@@ -5,6 +5,7 @@ mod app;
 mod client;
 mod config;
 mod redis;
+mod workers;
 
 use std::env;
 use std::sync::mpsc;
@@ -12,6 +13,7 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::time;
 
 use log::{error, info, debug};
+use workers::create_workers_pool;
 
 use crate::client::{copy_data_from_client_to_redis, watch_new_client_connection};
 use crate::config::{get_config, Config};
@@ -53,19 +55,13 @@ fn run_watch(
         return Err(format!("Error from listen client: {:?}", e));
     }
 
+    let workers_map = create_workers_pool(config.workers.pool.min, &tx_main_loop_message);
+
     // TODO master change message
-    if let Err(e) = app::run_main_loop(rx_main_loop_message, redis_master_address) {
+    if let Err(e) = app::run_main_loop(rx_main_loop_message, redis_master_address, workers_map) {
         return Err(format!("Error run main loop: {:?}", e));
     }
 
-    // if let Err(e) = copy_data_from_client_to_redis(
-    //     &data.new,
-    //     logger_redis_master,
-    //     rx_master_change,
-    //     rx_new_client,
-    // ) {
-    //     return Err(format!("Error when copy data: {:?}", e));
-    // }
     Ok(())
 }
 

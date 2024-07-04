@@ -33,4 +33,5 @@ loggers:
     level: debug
   red_concentrator::app:
     level: debug
-    
+  red_concentrator::workers:
+    level: debug
