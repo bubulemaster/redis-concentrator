@@ -12,6 +12,7 @@ use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::time;
 
+use app::messages::MainLoopEvent;
 use log::{error, info, debug};
 use workers::create_workers_pool;
 
@@ -22,8 +23,8 @@ use crate::redis::sentinel::watch_sentinel;
 const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
 
 struct InitSentinelData {
-    tx_main_loop_message: Sender<app::MainLoopEvent>,
-    rx_main_loop_message: Receiver<app::MainLoopEvent>,
+    tx_main_loop_message: Sender<MainLoopEvent>,
+    rx_main_loop_message: Receiver<MainLoopEvent>,
     redis_master_address: String
 }
 
@@ -46,8 +47,8 @@ fn print_logo() {
 
 fn run_watch(
     config: &Config,
-    tx_main_loop_message: Sender<app::MainLoopEvent>,
-    rx_main_loop_message: Receiver<app::MainLoopEvent>,
+    tx_main_loop_message: Sender<MainLoopEvent>,
+    rx_main_loop_message: Receiver<MainLoopEvent>,
     redis_master_address: String) -> Result<(), String> {
     debug!("Receive first master change notification. Start all thread of RedConcentrator");
 
@@ -71,8 +72,8 @@ fn run_watch_sentinel(
 ) -> Result<InitSentinelData, String> {
     // Channel to main loop
     let (tx_main_loop_message, rx_main_loop_message): (
-        Sender<app::MainLoopEvent>,
-        Receiver<app::MainLoopEvent>,
+        Sender<MainLoopEvent>,
+        Receiver<MainLoopEvent>,
     ) = mpsc::channel();
 
     info!("Watch sentinel at startup to get master address");

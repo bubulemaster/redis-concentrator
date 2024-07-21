@@ -1,6 +1,6 @@
 //! This module contains routine to watch sentinels.
 //!
-use crate::app::MainLoopEvent;
+use crate::app::messages::MainLoopEvent;
 use crate::config::Config;
 use crate::redis::subscription::RedisSubscription;
 use crate::redis::types::{ErrorKind, RedisError, RedisValue};

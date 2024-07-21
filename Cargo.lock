@@ -474,8 +474,6 @@ dependencies = [
 [[package]]
 name = "serde_yaml2"
 version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fd7f24fd25093e571f588ca14dd4f92b6aead6e1b97862824d519101dbd2b8d5"
 dependencies = [
  "serde",
  "thiserror",
