@@ -5,6 +5,7 @@ use std::net::{SocketAddr, TcpStream};
 use crate::redis::{sentinel::MasterChangeNotification, stream::network::NetworkStream};
 
 /// Message to communicate with main loop
+#[derive(Debug)]
 pub struct MainLoopEvent {
     /// If new client is here
     pub new_client: Option<(TcpStream, SocketAddr)>,
@@ -46,6 +47,7 @@ impl MainLoopEvent {
 }
 
 /// Get and release client
+#[derive(Debug)]
 pub struct GetAndReleaseClient {
     /// The worker id
     pub worker_id: String,
@@ -63,4 +65,10 @@ pub struct ClientConnectionParameter {
     pub client_stream: NetworkStream,
     /// Redis stream
     pub redis_stream: NetworkStream
+}
+
+impl std::fmt::Debug for ClientConnectionParameter {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+        write!(f, "ClientConnectionParameter {{ id: {}, client_addr: {:?}, client_stream: <can't display>, redis_stream: <can't display>}}", self.id, self.client_addr)
+    }
 }
