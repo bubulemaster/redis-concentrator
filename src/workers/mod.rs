@@ -27,10 +27,11 @@ pub fn create_one_worker(name: String, tx_main_loop_message: Sender<MainLoopEven
         Receiver<messages::WorkerEvent>,
     ) = mpsc::channel();
 
-    debug!("Start worker: {}", name);
+    debug!("create_one_worker(): Start worker: {}", name);
 
     let _ = thread::Builder::new().name(name.clone()).spawn(move || {
-        // Ask to main loop to get a new client for first time
+        debug!("create_one_worker(): Ask to main loop to get a new client for first time");
+
         tx_main_loop_message.send(MainLoopEvent::worker_get_client(name.clone(), tx_worker_message.clone())).unwrap();
 
         loop {
@@ -65,10 +66,11 @@ pub fn create_workers_pool(count: u8, tx_main_loop_message: &Sender<MainLoopEven
 
 #[inline]
 fn run_worker_loop(name: &String, rx_worker_message: &Receiver<messages::WorkerEvent>) -> Result<ClientConnectionParameter, ErrorWorkerLoop> {
+    debug!("run_worker_loop(): Worker wait message");
+
     match rx_worker_message.recv() {
         Ok(event) => {
-            debug!("Worker '{}' receive a client to read", name);
-            debug!("Event '{:?}'", event);
+            debug!("run_worker_loop(): Worker '{}' receive a client to read\nrun_worker_loop(): Event '{:?}'", name, event);
 
             if event.shutdown {
                 return Err(ErrorWorkerLoop::Stop);

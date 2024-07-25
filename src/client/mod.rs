@@ -22,6 +22,8 @@ pub fn watch_new_client_connection(
     };
 
     thread::spawn(move || loop {
+        debug!("watch_new_client_connection(): Wait a new client");
+
         match listener.accept() {
             Ok(d) => {
                 let (client_stream, client_addr) = d;

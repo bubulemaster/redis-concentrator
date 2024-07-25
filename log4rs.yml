@@ -28,10 +28,10 @@ root:
 
 loggers:
   red_concentrator::client:
-    level: info
+    level: debug
   red_concentrator::redis::sentinel:
     level: info
   red_concentrator::app:
     level: info
   red_concentrator::workers:
-    level: info
+    level: debug
