@@ -40,6 +40,8 @@ fn manage_message(event: MainLoopEvent, redis_master_addr: &mut String, clients:
         }
     } else if let Some(worker_message) = event.worker_message {
         manage_message_worker(worker_message, clients, workers);
+    } else if let Some(master) = event.master_change {
+        // TODO
     }
 }
 
