@@ -2,7 +2,7 @@
 name = "red-concentrator"
 version = "0.0.1"
 authors = ["Emeric MARTINEAU"]
-edition = "2018"
+edition = "2021"
 description = "RedConcentrator is tool to easly connect your application to Redis without know his infrastructure."
 repository = "..."
 readme = "README.md"
