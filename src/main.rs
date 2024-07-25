@@ -16,7 +16,7 @@ use app::messages::MainLoopEvent;
 use log::{error, info, debug};
 use workers::create_workers_pool;
 
-use crate::client::{copy_data_from_client_to_redis, watch_new_client_connection};
+use crate::client::watch_new_client_connection;
 use crate::config::{get_config, Config};
 use crate::redis::sentinel::watch_sentinel;
 
@@ -56,10 +56,9 @@ fn run_watch(
         return Err(format!("Error from listen client: {:?}", e));
     }
 
-    let workers_map = create_workers_pool(config.workers.pool.min, &tx_main_loop_message);
+    create_workers_pool(config.workers.pool.min, &tx_main_loop_message);
 
-    // TODO master change message
-    if let Err(e) = app::run_main_loop(rx_main_loop_message, redis_master_address, workers_map) {
+    if let Err(e) = app::run_main_loop(rx_main_loop_message, redis_master_address) {
         return Err(format!("Error run main loop: {:?}", e));
     }
 

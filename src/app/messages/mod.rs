@@ -2,7 +2,7 @@
 //!
 use std::net::{SocketAddr, TcpStream};
 
-use crate::redis::{sentinel::MasterChangeNotification, stream::network::NetworkStream};
+use crate::{redis::{sentinel::MasterChangeNotification, stream::network::NetworkStream}, workers::WorkerEventReceiver};
 
 /// Message to communicate with main loop
 #[derive(Debug)]
@@ -34,16 +34,31 @@ impl MainLoopEvent {
         }
     }
 
-    pub fn worker_get_client(name: String, client: Option<ClientConnectionParameter>) -> Self  {
+    /// Get a client for the first time
+    pub fn worker_get_client(name: String, tx_worker_message: WorkerEventReceiver) -> Self  {
         Self {
             new_client: None,
             master_change: None,
             worker_message: Some(GetAndReleaseClient {
                 worker_id: name,
-                client_to_release: client
+                client_to_release: None,
+                tx_worker_message
             }),
         }
     }
+
+    /// Release a client and get a new client
+    pub fn worker_send_and_get_client(name: String, client: ClientConnectionParameter, tx_worker_message: WorkerEventReceiver) -> Self  {
+        Self {
+            new_client: None,
+            master_change: None,
+            worker_message: Some(GetAndReleaseClient {
+                worker_id: name,
+                client_to_release: Some(client),
+                tx_worker_message
+            }),
+        }
+    }    
 }
 
 /// Get and release client
@@ -53,6 +68,8 @@ pub struct GetAndReleaseClient {
     pub worker_id: String,
     /// Client to release
     pub client_to_release: Option<ClientConnectionParameter>,
+    /// Channel to send message to worker
+    pub tx_worker_message: WorkerEventReceiver
 }
 
 /// Client connection
